@@ -1,5 +1,12 @@
 # RA Plugin Manifest Editor
 
+> **Unofficial, third-party tool.** This project is not created by, affiliated
+> with, endorsed by, or sponsored by Rocksolid Audio. "RA Control" and any
+> related names/marks belong to their respective owners and are used here
+> only to describe compatibility. It works by editing a local config file
+> (`HostMode.props`) and isn't supported by Rocksolid Audio — use at your
+> own risk, and see the backup behavior described below before relying on it.
+
 A companion tool for [RA Control](https://rocksolidaudio.com) that lets you
 curate the plugin list its **Insert Plugins** activity shows you — instead
 of hand-editing XML, check off the plugins you don't want cluttering that
