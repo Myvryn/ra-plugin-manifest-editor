@@ -5,6 +5,8 @@ curate the plugin list its **Insert Plugins** activity shows you — instead
 of hand-editing XML, check off the plugins you don't want cluttering that
 list and remove them with one click.
 
+![RA Plugin Manifest Editor](docs/screenshot.png)
+
 ## What it is
 
 RA Control keeps track of every plugin it finds on your system in a file
