@@ -1,0 +1,20 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RAPluginManifestEditor.Views.ConfirmDialog"
+        Width="420" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="Confirm"
+        Background="{StaticResource BrushPanel}">
+  <Grid RowDefinitions="Auto,Auto" Margin="20">
+    <StackPanel Grid.Row="0" Spacing="10">
+      <TextBlock Name="TitleText" FontSize="15" FontWeight="Bold" />
+      <TextBlock Name="MessageText" FontSize="12.5" TextWrapping="Wrap"
+                 Foreground="{StaticResource BrushTextMuted}" />
+    </StackPanel>
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="0,20,0,0">
+      <Button Content="Cancel" Click="OnCancelClick" />
+      <Button Name="ConfirmButton" Content="Confirm" Classes="outline-red" Click="OnConfirmClick" />
+    </StackPanel>
+  </Grid>
+</Window>

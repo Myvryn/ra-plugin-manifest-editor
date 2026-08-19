@@ -1,0 +1,222 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Styles.Resources>
+    <!-- Palette sampled from RA Control's own UI -->
+    <Color x:Key="ColorBg">#1E1E1E</Color>
+    <Color x:Key="ColorPanel">#262626</Color>
+    <Color x:Key="ColorPanelAlt">#202020</Color>
+    <Color x:Key="ColorBorder">#3A3A3A</Color>
+    <Color x:Key="ColorGold">#DCA34C</Color>
+    <Color x:Key="ColorGoldLight">#DCB96E</Color>
+    <Color x:Key="ColorGreen">#68C1A0</Color>
+    <Color x:Key="ColorGreenBg">#1E4437</Color>
+    <Color x:Key="ColorRed">#E6827D</Color>
+    <Color x:Key="ColorRedBg">#3A2323</Color>
+    <Color x:Key="ColorTextPrimary">#F0F0F0</Color>
+    <Color x:Key="ColorTextMuted">#9AA1AC</Color>
+    <Color x:Key="ColorRowHover">#262B36</Color>
+
+    <SolidColorBrush x:Key="BrushBg" Color="{StaticResource ColorBg}" />
+    <SolidColorBrush x:Key="BrushPanel" Color="{StaticResource ColorPanel}" />
+    <SolidColorBrush x:Key="BrushPanelAlt" Color="{StaticResource ColorPanelAlt}" />
+    <SolidColorBrush x:Key="BrushBorder" Color="{StaticResource ColorBorder}" />
+    <SolidColorBrush x:Key="BrushGold" Color="{StaticResource ColorGold}" />
+    <SolidColorBrush x:Key="BrushGoldLight" Color="{StaticResource ColorGoldLight}" />
+    <SolidColorBrush x:Key="BrushGreen" Color="{StaticResource ColorGreen}" />
+    <SolidColorBrush x:Key="BrushGreenBg" Color="{StaticResource ColorGreenBg}" />
+    <SolidColorBrush x:Key="BrushRed" Color="{StaticResource ColorRed}" />
+    <SolidColorBrush x:Key="BrushRedBg" Color="{StaticResource ColorRedBg}" />
+    <SolidColorBrush x:Key="BrushTextPrimary" Color="{StaticResource ColorTextPrimary}" />
+    <SolidColorBrush x:Key="BrushTextMuted" Color="{StaticResource ColorTextMuted}" />
+    <SolidColorBrush x:Key="BrushRowHover" Color="{StaticResource ColorRowHover}" />
+  </Styles.Resources>
+
+  <!-- ===================== Window / base text ===================== -->
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{StaticResource BrushBg}" />
+    <Setter Property="FontFamily" Value="Inter" />
+  </Style>
+  <Style Selector="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+  </Style>
+
+  <!-- ===================== Buttons ===================== -->
+  <Style Selector="Button">
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="12,7" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+  </Style>
+  <Style Selector="Button:pointerover /template/ ContentPresenter">
+    <Setter Property="BorderBrush" Value="{StaticResource BrushGold}" />
+  </Style>
+  <Style Selector="Button:disabled">
+    <Setter Property="Opacity" Value="0.4" />
+  </Style>
+
+  <!-- Primary (filled gold) -->
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{StaticResource BrushGold}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushGold}" />
+    <Setter Property="Foreground" Value="#1E1E1E" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource BrushGoldLight}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushGoldLight}" />
+  </Style>
+
+  <!-- Outline green (positive / confirm) -->
+  <Style Selector="Button.outline-green">
+    <Setter Property="BorderBrush" Value="{StaticResource BrushGreen}" />
+    <Setter Property="Foreground" Value="{StaticResource BrushGreen}" />
+  </Style>
+  <Style Selector="Button.outline-green:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource BrushGreenBg}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushGreen}" />
+  </Style>
+
+  <!-- Outline red (danger / remove) -->
+  <Style Selector="Button.outline-red">
+    <Setter Property="BorderBrush" Value="{StaticResource BrushRed}" />
+    <Setter Property="Foreground" Value="{StaticResource BrushRed}" />
+  </Style>
+  <Style Selector="Button.outline-red:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource BrushRedBg}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushRed}" />
+  </Style>
+
+  <!-- Ghost (no border, muted) -->
+  <Style Selector="Button.ghost">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}" />
+  </Style>
+  <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.ghost:pointerover">
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+  </Style>
+
+  <!-- ===================== Inputs ===================== -->
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="{StaticResource BrushPanel}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="CaretBrush" Value="{StaticResource BrushGold}" />
+    <Setter Property="SelectionBrush" Value="{StaticResource BrushGreenBg}" />
+  </Style>
+  <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{StaticResource BrushGold}" />
+  </Style>
+  <Style Selector="TextBlock.watermark">
+    <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}" />
+  </Style>
+
+  <Style Selector="ComboBox">
+    <Setter Property="Background" Value="{StaticResource BrushPanel}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="FontSize" Value="12.5" />
+  </Style>
+  <Style Selector="ComboBoxItem">
+    <Setter Property="Background" Value="{StaticResource BrushPanel}" />
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+  </Style>
+  <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource BrushRowHover}" />
+  </Style>
+
+  <Style Selector="CheckBox">
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+  </Style>
+
+  <Style Selector="ScrollViewer">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ToolTip">
+    <Setter Property="Background" Value="{StaticResource BrushPanelAlt}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+  </Style>
+
+  <!-- ===================== Chips ===================== -->
+  <Style Selector="Border.chip">
+    <Setter Property="Background" Value="{StaticResource BrushPanelAlt}" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Padding" Value="8,1" />
+  </Style>
+  <Style Selector="Border.chip TextBlock">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+  </Style>
+  <Style Selector="Border.chip-history">
+    <Setter Property="Background" Value="{StaticResource BrushRed}" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Padding" Value="8,1" />
+  </Style>
+  <Style Selector="Border.chip-history TextBlock">
+    <Setter Property="FontSize" Value="10.5" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="#1E1E1E" />
+  </Style>
+
+  <!-- ===================== Table rows ===================== -->
+  <Style Selector="Border.tableHeader">
+    <Setter Property="Background" Value="{StaticResource BrushPanel}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Padding" Value="10,8" />
+  </Style>
+  <Style Selector="Border.tableHeader TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+  <Style Selector="Button.headerSort">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+  <Style Selector="Button.headerSort:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.headerSort:pointerover">
+    <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
+  </Style>
+
+  <Style Selector="Border.pluginRow">
+    <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Border.pluginRow:pointerover">
+    <Setter Property="Background" Value="{StaticResource BrushRowHover}" />
+  </Style>
+  <Style Selector="Border.pluginRow.marked">
+    <Setter Property="Background" Value="{StaticResource BrushRedBg}" />
+  </Style>
+  <Style Selector="Border.pluginRow.marked:pointerover">
+    <Setter Property="Background" Value="{StaticResource BrushRedBg}" />
+  </Style>
+
+</Styles>

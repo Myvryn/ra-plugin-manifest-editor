@@ -1,0 +1,250 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RAPluginManifestEditor.ViewModels"
+        xmlns:models="using:RAPluginManifestEditor.Models"
+        xmlns:conv="using:RAPluginManifestEditor.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="RAPluginManifestEditor.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Width="1200" Height="800" MinWidth="900" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        Title="RA Control — Plugin Manifest Editor">
+
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <Window.Resources>
+        <conv:CountToVisibleConverter x:Key="CountToVisible" />
+        <!-- shared column layout for the plugin table header + rows -->
+    </Window.Resources>
+
+    <Panel>
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+            <!-- ===================== Header ===================== -->
+            <Border Grid.Row="0" Background="{StaticResource BrushPanel}"
+                    BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1"
+                    Padding="20,14">
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="RA Control" FontWeight="Bold" FontSize="16"
+                               Foreground="{StaticResource BrushGold}" />
+                    <TextBlock Text="Plugin Manifest Editor" FontWeight="Bold" FontSize="16" />
+                    <TextBlock Text="edits HostMode.props (KnownPluginList)" FontSize="12"
+                               Foreground="{StaticResource BrushTextMuted}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- ===================== Toolbar ===================== -->
+            <Border Grid.Row="1" Background="{StaticResource BrushPanel}"
+                    BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1"
+                    Padding="20,10">
+                <WrapPanel VerticalAlignment="Center" ItemSpacing="8" LineSpacing="8">
+                    <Button Content="Open different file…" Classes="primary" Command="{Binding OpenFileCommand}" />
+                    <Button Content="Reload from disk" IsEnabled="{Binding IsFileLoaded}" Command="{Binding ReloadFromDiskCommand}" />
+                    <TextBox Text="{Binding SearchText}" PlaceholderText="Filter by name, manufacturer, format, category…"
+                              IsEnabled="{Binding IsFileLoaded}" Width="320" />
+                    <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}"
+                              IsEnabled="{Binding IsFileLoaded}" MinWidth="140" />
+                    <Button Content="Check all filtered" IsEnabled="{Binding IsFileLoaded}" Command="{Binding CheckAllFilteredCommand}" />
+                    <Button Content="Uncheck all" IsEnabled="{Binding IsFileLoaded}" Command="{Binding UncheckAllCommand}" />
+                    <Button Command="{Binding OpenHistoryCommand}" Classes="ghost">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Removal history" />
+                            <Border Classes="chip-history" IsVisible="{Binding HistoryItems.Count, Converter={StaticResource CountToVisible}}">
+                                <TextBlock Text="{Binding HistoryItems.Count}" />
+                            </Border>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="outline-red" IsEnabled="{Binding IsFileLoaded}" Command="{Binding RemoveCheckedCommand}">
+                        <TextBlock>
+                            <Run Text="Remove checked (" /><Run Text="{Binding CheckedCount}" /><Run Text=")" />
+                        </TextBlock>
+                    </Button>
+                </WrapPanel>
+            </Border>
+
+            <!-- ===================== Status bar ===================== -->
+            <Border Grid.Row="2" IsVisible="{Binding IsFileLoaded}"
+                    Background="{StaticResource BrushPanel}"
+                    BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1"
+                    Padding="20,8">
+                <WrapPanel ItemSpacing="18" LineSpacing="4">
+                    <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12">
+                        <Run Text="Total: " /><Run Text="{Binding TotalCount}" FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" />
+                    </TextBlock>
+                    <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12">
+                        <Run Text="Shown: " /><Run Text="{Binding ShownCount}" FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" />
+                    </TextBlock>
+                    <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12">
+                        <Run Text="Checked: " /><Run Text="{Binding CheckedCount}" FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" />
+                    </TextBlock>
+                    <TextBlock FontSize="12" Foreground="{StaticResource BrushGreen}" FontWeight="SemiBold"
+                               IsVisible="{Binding AutoCheckedCount, Converter={StaticResource CountToVisible}}">
+                        <Run Text="{Binding AutoCheckedCount}" /><Run Text=" auto-selected from removal history" />
+                    </TextBlock>
+                    <TextBlock FontSize="12" Foreground="{StaticResource BrushRed}" FontWeight="SemiBold"
+                               IsVisible="{Binding RemovedThisSessionCount, Converter={StaticResource CountToVisible}}">
+                        <Run Text="{Binding RemovedThisSessionCount}" /><Run Text=" removed this session (not yet saved)" />
+                    </TextBlock>
+                </WrapPanel>
+            </Border>
+
+            <!-- ===================== Main content ===================== -->
+            <Grid Grid.Row="3">
+
+                <!-- Empty state -->
+                <StackPanel IsVisible="{Binding !IsFileLoaded}" VerticalAlignment="Center"
+                            HorizontalAlignment="Center" Spacing="10" MaxWidth="480">
+                    <TextBlock Text="No file loaded yet." FontSize="15" HorizontalAlignment="Center" />
+                    <TextBlock Text="Open the HostMode.props file from RA Control's Host Mode folder."
+                               Foreground="{StaticResource BrushTextMuted}" FontSize="12.5"
+                               HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="{Binding LastKnownFileHint, StringFormat='Last file not found: {0}'}"
+                               IsVisible="{Binding HasLastKnownFileHint}"
+                               Foreground="{StaticResource BrushRed}" FontSize="11.5"
+                               HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                    <Button Content="Open HostMode.props…" Classes="primary" Command="{Binding OpenFileCommand}"
+                            HorizontalAlignment="Center" Margin="0,10,0,0" />
+                </StackPanel>
+
+                <!-- Plugin table -->
+                <Grid RowDefinitions="Auto,*" IsVisible="{Binding IsFileLoaded}">
+
+                    <Border Grid.Row="0" Classes="tableHeader" Margin="20,12,20,0">
+                        <Grid ColumnDefinitions="40,2*,150,80,150,90,3*">
+                            <TextBlock Grid.Column="0" />
+                            <Button Grid.Column="1" Classes="headerSort" Content="Name"
+                                    Command="{Binding SortByCommand}" CommandParameter="Name" />
+                            <Button Grid.Column="2" Classes="headerSort" Content="Manufacturer"
+                                    Command="{Binding SortByCommand}" CommandParameter="Manufacturer" />
+                            <Button Grid.Column="3" Classes="headerSort" Content="Format"
+                                    Command="{Binding SortByCommand}" CommandParameter="Format" />
+                            <Button Grid.Column="4" Classes="headerSort" Content="Category"
+                                    Command="{Binding SortByCommand}" CommandParameter="Category" />
+                            <Button Grid.Column="5" Classes="headerSort" Content="Version"
+                                    Command="{Binding SortByCommand}" CommandParameter="Version" />
+                            <Button Grid.Column="6" Classes="headerSort" Content="File"
+                                    Command="{Binding SortByCommand}" CommandParameter="FilePath" />
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="1" Margin="20,0,20,20"
+                            BorderBrush="{StaticResource BrushBorder}" BorderThickness="1,0,1,1">
+                        <ScrollViewer>
+                            <ItemsControl ItemsSource="{Binding FilteredPlugins}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:PluginEntry">
+                                        <Border Classes="pluginRow" Classes.marked="{Binding IsChecked}">
+                                            <Grid ColumnDefinitions="40,2*,150,80,150,90,3*">
+                                                <CheckBox Grid.Column="0" IsChecked="{Binding IsChecked}"
+                                                          VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
+                                                    <Border Classes="chip-history" IsVisible="{Binding FromHistory}"
+                                                            ToolTip.Tip="Previously removed — auto-selected">
+                                                        <TextBlock Text="history" />
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{Binding Manufacturer}"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                <Border Grid.Column="3" Classes="chip" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Format}" />
+                                                </Border>
+                                                <TextBlock Grid.Column="4" Text="{Binding Category}"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                           Foreground="{StaticResource BrushTextMuted}" FontSize="12" />
+                                                <TextBlock Grid.Column="5" Text="{Binding Version}"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                           Foreground="{StaticResource BrushTextMuted}" FontSize="12" />
+                                                <TextBlock Grid.Column="6" Text="{Binding FilePath}" ToolTip.Tip="{Binding FilePath}"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                           Foreground="{StaticResource BrushTextMuted}" FontSize="11"
+                                                           FontFamily="Consolas,monospace" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- ===================== Footer ===================== -->
+            <Border Grid.Row="4" Background="{StaticResource BrushPanel}"
+                    BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,1,0,0"
+                    Padding="20,12">
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Content="Save changes" Classes="primary" IsEnabled="{Binding IsFileLoaded}"
+                            Command="{Binding SaveCommand}" />
+                    <Button Content="Save edited copy as…" IsEnabled="{Binding IsFileLoaded}"
+                            Command="{Binding SaveAsCopyCommand}" />
+                    <TextBlock Text="{Binding StatusLog}" Foreground="{StaticResource BrushTextMuted}"
+                               FontSize="11.5" TextWrapping="Wrap" MaxWidth="600" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ===================== Removal history overlay ===================== -->
+        <Border IsVisible="{Binding IsHistoryOpen}" Background="#AA0F1115">
+            <Border Background="{StaticResource BrushPanel}" BorderBrush="{StaticResource BrushBorder}"
+                    BorderThickness="1" CornerRadius="10" Width="620" MaxHeight="620"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <Border Grid.Row="0" BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1" Padding="18,14">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Removal history — auto-selected on load"
+                                       FontWeight="Bold" FontSize="14" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="Close" Classes="ghost" Command="{Binding CloseHistoryCommand}" />
+                        </Grid>
+                    </Border>
+                    <ScrollViewer Grid.Row="1" Padding="18,4">
+                        <ItemsControl ItemsSource="{Binding HistoryItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:HistoryEntry">
+                                    <Border BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1" Padding="0,8">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0" Spacing="2">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12.5" />
+                                                    <Border Classes="chip"><TextBlock Text="{Binding Format}" /></Border>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Manufacturer}" FontSize="11.5"
+                                                           Foreground="{StaticResource BrushTextMuted}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                                <Button Content="Restore" Classes="outline-green"
+                                                        Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).RestoreHistoryItemCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Forget" Classes="ghost"
+                                                        Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ForgetHistoryItemCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                    <Border Grid.Row="2" BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,1,0,0" Padding="18,12">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Button Grid.Column="0" Content="Clear all history" Classes="outline-red"
+                                    Command="{Binding ClearHistoryCommand}" />
+                            <TextBlock Grid.Column="2" Text="{Binding HistoryItems.Count, StringFormat='{}{0} item(s)'}"
+                                       Foreground="{StaticResource BrushTextMuted}" FontSize="11.5" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </Border>
+    </Panel>
+
+</Window>
