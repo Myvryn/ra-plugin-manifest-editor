@@ -97,17 +97,6 @@ folder occasionally if you save often.
 The app's own settings/history are stored separately from RA Control's
 files, so deleting them resets this tool without touching RA Control itself.
 
-## Why a native app instead of a web page
-
-The first version of this was a browser-based tool, but Chromium blocks
-the File System Access API from opening files under `%APPDATA%` (it's
-treated as a protected system location), so it couldn't open
-`HostMode.props` directly. This version is a native desktop app instead,
-which has no such restriction.
-
-It's built with Avalonia UI (.NET) specifically so the same source can be
-built for Windows or macOS — see the "Building" section below.
-
 ---
 
 ## Building
