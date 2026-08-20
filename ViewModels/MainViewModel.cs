@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Avalonia.Platform.Storage;
@@ -19,6 +20,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly SettingsStore _settingsStore = new();
     private readonly HistoryStore _historyStore = new();
     private readonly MapAvailabilityService _mapAvailabilityService = new();
+    private readonly LiveMapAvailabilityService _liveMapAvailabilityService = new();
 
     private XDocument? _document;
     private List<PluginEntry> _allPlugins = new();
@@ -93,6 +95,19 @@ public partial class MainViewModel : ViewModelBase
     public partial bool HasKnownControllerModels { get; set; }
 
     public ObservableCollection<ControllerModelOption> ControllerModelOptions { get; } = new();
+
+    [ObservableProperty]
+    public partial string? ApiToken { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsLiveChecking { get; set; }
+
+    [ObservableProperty]
+    public partial string? LiveCheckProgressLabel { get; set; }
+
+    public bool CanLiveCheck => !string.IsNullOrWhiteSpace(ApiToken);
+
+    partial void OnApiTokenChanged(string? value) => OnPropertyChanged(nameof(CanLiveCheck));
 
     [ObservableProperty]
     public partial string? LastKnownFileHint { get; set; }
@@ -383,6 +398,49 @@ public partial class MainViewModel : ViewModelBase
                   "Control at least once so it can build its map index, then try again.";
     }
 
+    /// <summary>Re-verifies, live against RA Control's own API, only the plugins the
+    /// offline check above couldn't confidently mark "Downloaded" (no local Parameter
+    /// Table) - fixes cases where a stale/incomplete AvailableMaps.txt snapshot would
+    /// otherwise misflag a plugin as having no map at all (and auto-check it for removal).
+    /// Requires a user-supplied API token in Settings; this app never ships one.</summary>
+    [RelayCommand]
+    private async Task CheckMapAvailabilityLiveAsync()
+    {
+        if (IsLiveChecking || _allPlugins.Count == 0 || string.IsNullOrWhiteSpace(ApiToken)) return;
+
+        var selectedModels = _settingsStore.Load().SelectedControllerModels;
+        if (selectedModels.Count == 0)
+        {
+            StatusLog = "Select which RA Control device(s) you have in Settings first — map availability is specific to your hardware.";
+            return;
+        }
+
+        IsLiveChecking = true;
+        LiveCheckProgressLabel = "Starting…";
+        try
+        {
+            var progress = new Progress<(int done, int total)>(p => LiveCheckProgressLabel = $"Checking {p.done}/{p.total}…");
+            var result = await _liveMapAvailabilityService.EvaluateAsync(
+                _allPlugins, selectedModels, ApiToken.Trim(), progress, CancellationToken.None);
+
+            MapsDownloadedCount = _allPlugins.Count(p => p.MapAvailability == MapAvailability.Downloaded);
+            MapsMissingCount = _allPlugins.Count(p => p.MapAvailability == MapAvailability.AvailableNotDownloaded);
+            MapsNotAvailableCount = _allPlugins.Count(p => p.MapAvailability == MapAvailability.NotAvailable);
+            RecomputeCounts();
+
+            StatusLog = result.Failed > 0
+                ? $"Live check: {result.Checked} plugin(s) re-verified, {result.Confirmed} confirmed available, " +
+                  $"{result.Failed} failed (check your API token and network connection)."
+                : $"Live check complete — {result.Checked} plugin(s) re-verified against RA Control's live API, " +
+                  $"{result.Confirmed} confirmed available.";
+        }
+        finally
+        {
+            IsLiveChecking = false;
+            LiveCheckProgressLabel = null;
+        }
+    }
+
     // ------------------------------------------------------------------
     // Settings (RA Control device selection)
     // ------------------------------------------------------------------
@@ -390,8 +448,10 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void OpenSettings()
     {
-        var selected = new HashSet<string>(_settingsStore.Load().SelectedControllerModels, StringComparer.OrdinalIgnoreCase);
+        var settings = _settingsStore.Load();
+        var selected = new HashSet<string>(settings.SelectedControllerModels, StringComparer.OrdinalIgnoreCase);
         var known = _mapAvailabilityService.GetKnownControllerModels();
+        ApiToken = settings.ApiToken;
 
         HasKnownControllerModels = known.Count > 0;
         ControllerModelOptions.Clear();
@@ -409,7 +469,13 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void CloseSettings() => IsSettingsOpen = false;
+    private void CloseSettings()
+    {
+        var settings = _settingsStore.Load();
+        settings.ApiToken = string.IsNullOrWhiteSpace(ApiToken) ? null : ApiToken.Trim();
+        _settingsStore.Save(settings);
+        IsSettingsOpen = false;
+    }
 
     private void SaveControllerModelSelection()
     {

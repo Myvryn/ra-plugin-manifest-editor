@@ -55,6 +55,10 @@
                     <Button Content="Uncheck all" IsEnabled="{Binding IsFileLoaded}" Command="{Binding UncheckAllCommand}" />
                     <Button Content="Check for missing maps" IsEnabled="{Binding IsFileLoaded}" Command="{Binding CheckMapAvailabilityCommand}"
                             ToolTip.Tip="Cross-checks each plugin's uniqueId against RA Control's own local map cache (AvailableMaps.txt + Parameter Tables). Makes no network requests. Plugins with no map available anywhere are auto-checked for removal." />
+                    <Button Content="{Binding LiveCheckProgressLabel, FallbackValue='Check for missing maps (live)', TargetNullValue='Check for missing maps (live)'}"
+                            IsVisible="{Binding CanLiveCheck}" IsEnabled="{Binding IsFileLoaded}"
+                            Command="{Binding CheckMapAvailabilityLiveCommand}"
+                            ToolTip.Tip="Re-verifies plugins with no local Parameter Table against RA Control's own live API (findFileInPath only — never downloads), instead of trusting the possibly-stale local cache. Requires an API token set in Settings." />
                     <Button Command="{Binding OpenHistoryCommand}" Classes="ghost">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBlock Text="Removal history" />
@@ -304,6 +308,19 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <Border BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,12,0,0">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Live availability check (optional)" FontWeight="SemiBold" FontSize="12.5" />
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    This app ships with no API access of its own. If you have your own token for
+                                    RA Control's API, paste it here to enable a live check that re-verifies
+                                    plugins the local cache couldn't confidently resolve. Entirely optional —
+                                    everything else works without it.
+                                </TextBlock>
+                                <TextBox Text="{Binding ApiToken}" PlaceholderText="API token (optional)" PasswordChar="•" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Grid>
             </Border>
