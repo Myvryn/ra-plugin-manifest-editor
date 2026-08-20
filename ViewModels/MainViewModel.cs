@@ -18,6 +18,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly ManifestService _manifestService = new();
     private readonly SettingsStore _settingsStore = new();
     private readonly HistoryStore _historyStore = new();
+    private readonly MapAvailabilityService _mapAvailabilityService = new();
 
     private XDocument? _document;
     private List<PluginEntry> _allPlugins = new();
@@ -68,7 +69,30 @@ public partial class MainViewModel : ViewModelBase
     public partial int RemovedThisSessionCount { get; set; }
 
     [ObservableProperty]
+    public partial bool HasCheckedMaps { get; set; }
+
+    [ObservableProperty]
+    public partial int MapsMissingCount { get; set; }
+
+    [ObservableProperty]
+    public partial int MapsDownloadedCount { get; set; }
+
+    [ObservableProperty]
+    public partial int MapsNotAvailableCount { get; set; }
+
+    [ObservableProperty]
+    public partial int SelectedForMapCount { get; set; }
+
+    [ObservableProperty]
     public partial bool IsHistoryOpen { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsSettingsOpen { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasKnownControllerModels { get; set; }
+
+    public ObservableCollection<ControllerModelOption> ControllerModelOptions { get; } = new();
 
     [ObservableProperty]
     public partial string? LastKnownFileHint { get; set; }
@@ -161,6 +185,7 @@ public partial class MainViewModel : ViewModelBase
         p.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(PluginEntry.IsChecked)) RecomputeCounts();
+            if (e.PropertyName == nameof(PluginEntry.IsSelectedForMap)) RecomputeCounts();
         };
     }
 
@@ -195,9 +220,15 @@ public partial class MainViewModel : ViewModelBase
             AutoCheckedCount = autoChecked;
             RemovedThisSessionCount = 0;
             LastKnownFileHint = null;
+            HasCheckedMaps = false;
+            MapsMissingCount = 0;
+            MapsDownloadedCount = 0;
+            MapsNotAvailableCount = 0;
 
             ApplyFilter();
-            _settingsStore.Save(new AppSettings { LastFilePath = path });
+            var settings = _settingsStore.Load();
+            settings.LastFilePath = path;
+            _settingsStore.Save(settings);
 
             StatusLog = $"Loaded \"{Path.GetFileName(path)}\" — {_allPlugins.Count} plugin(s)." +
                         (autoChecked > 0 ? $" {autoChecked} auto-selected from removal history." : "");
@@ -317,6 +348,74 @@ public partial class MainViewModel : ViewModelBase
         if (!confirmed) return;
 
         PerformRemoveChecked(toRemove);
+    }
+
+    // ------------------------------------------------------------------
+    // Map availability (offline check against RA Control's own local cache)
+    // ------------------------------------------------------------------
+
+    /// <summary>Cross-references every loaded plugin's uniqueId against RA Control's own
+    /// local map cache (AvailableMaps.txt + Parameter Tables) — no network calls. Plugins
+    /// with a map available but not yet downloaded are auto-selected via IsSelectedForMap,
+    /// which is intentionally separate from IsChecked (removal) so the two can't collide.</summary>
+    [RelayCommand]
+    private void CheckMapAvailability()
+    {
+        if (_allPlugins.Count == 0) return;
+
+        var selectedModels = _settingsStore.Load().SelectedControllerModels;
+        var result = _mapAvailabilityService.Evaluate(_allPlugins, selectedModels);
+        HasCheckedMaps = true;
+        MapsDownloadedCount = result.Downloaded;
+        MapsMissingCount = result.Missing;
+        MapsNotAvailableCount = result.NotAvailable;
+        RecomputeCounts();
+
+        StatusLog = result.NoControllersSelected
+            ? "Select which RA Control device(s) you have in Settings first — map availability is specific to your hardware."
+            : result.CacheFound
+                ? $"Checked maps — {result.Missing} plugin(s) have a map available but not downloaded" +
+                  (result.Missing > 0 ? " (auto-selected)." : ".") +
+                  $" {result.Downloaded} already have a map on disk." +
+                  $" {result.NotAvailable} have no map upstream" +
+                  (result.NotAvailable > 0 ? " (auto-checked for removal)." : ".")
+                : "Couldn't find RA Control's map cache (AvailableMaps.txt) — open Host Mode in RA " +
+                  "Control at least once so it can build its map index, then try again.";
+    }
+
+    // ------------------------------------------------------------------
+    // Settings (RA Control device selection)
+    // ------------------------------------------------------------------
+
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        var selected = new HashSet<string>(_settingsStore.Load().SelectedControllerModels, StringComparer.OrdinalIgnoreCase);
+        var known = _mapAvailabilityService.GetKnownControllerModels();
+
+        HasKnownControllerModels = known.Count > 0;
+        ControllerModelOptions.Clear();
+        foreach (var model in known)
+        {
+            var option = new ControllerModelOption(model, selected.Contains(model));
+            option.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(ControllerModelOption.IsSelected)) SaveControllerModelSelection();
+            };
+            ControllerModelOptions.Add(option);
+        }
+
+        IsSettingsOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseSettings() => IsSettingsOpen = false;
+
+    private void SaveControllerModelSelection()
+    {
+        var settings = _settingsStore.Load();
+        settings.SelectedControllerModels = ControllerModelOptions.Where(o => o.IsSelected).Select(o => o.Name).ToList();
+        _settingsStore.Save(settings);
     }
 
     // ------------------------------------------------------------------
@@ -464,5 +563,6 @@ public partial class MainViewModel : ViewModelBase
         TotalCount = _allPlugins.Count;
         ShownCount = shown ?? FilteredPlugins.Count;
         CheckedCount = _allPlugins.Count(p => p.IsChecked);
+        SelectedForMapCount = _allPlugins.Count(p => p.IsSelectedForMap);
     }
 }

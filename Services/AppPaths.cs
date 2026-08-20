@@ -52,4 +52,27 @@ public static class AppPaths
 
         return candidate is not null && Directory.Exists(candidate) ? candidate : null;
     }
+
+    /// <summary>RA Control's own local index of every map it knows is available upstream
+    /// (one relative path per line, e.g. "Acqua/AMBER4PRE (da8253ed).json"). RA Control
+    /// refreshes this itself; nothing here fetches it from the network.</summary>
+    public static string? GuessAvailableMapsPath()
+    {
+        var hostModeDir = GuessHostModePropsDir();
+        if (hostModeDir is null) return null;
+
+        var path = Path.Combine(hostModeDir, "AvailableMaps.txt");
+        return File.Exists(path) ? path : null;
+    }
+
+    /// <summary>Folder where RA Control stores maps it has already downloaded for this user
+    /// (flat *.json files named "PluginName (uniqueId).json").</summary>
+    public static string? GuessDownloadedMapsDir()
+    {
+        var hostModeDir = GuessHostModePropsDir();
+        if (hostModeDir is null) return null;
+
+        var dir = Path.Combine(hostModeDir, "Parameter Tables");
+        return Directory.Exists(dir) ? dir : null;
+    }
 }

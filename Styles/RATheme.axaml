@@ -173,6 +173,22 @@
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Foreground" Value="#1E1E1E" />
   </Style>
+  <Style Selector="Border.chip.mapDownloaded">
+    <Setter Property="Background" Value="{StaticResource BrushGreenBg}" />
+  </Style>
+  <Style Selector="Border.chip.mapDownloaded TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource BrushGreen}" />
+  </Style>
+  <Style Selector="Border.chip.mapMissing">
+    <Setter Property="Background" Value="{StaticResource BrushGold}" />
+  </Style>
+  <Style Selector="Border.chip.mapMissing TextBlock">
+    <Setter Property="Foreground" Value="#1E1E1E" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector="Border.chip.mapNotAvailable TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}" />
+  </Style>
 
   <!-- ===================== Table rows ===================== -->
   <Style Selector="Border.tableHeader">

@@ -28,13 +28,16 @@
             <Border Grid.Row="0" Background="{StaticResource BrushPanel}"
                     BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1"
                     Padding="20,14">
-                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <TextBlock Text="RA Control" FontWeight="Bold" FontSize="16"
-                               Foreground="{StaticResource BrushGold}" />
-                    <TextBlock Text="Plugin Manifest Editor" FontWeight="Bold" FontSize="16" />
-                    <TextBlock Text="edits HostMode.props (KnownPluginList)" FontSize="12"
-                               Foreground="{StaticResource BrushTextMuted}" VerticalAlignment="Center" />
-                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <TextBlock Text="RA Control" FontWeight="Bold" FontSize="16"
+                                   Foreground="{StaticResource BrushGold}" />
+                        <TextBlock Text="Plugin Manifest Editor" FontWeight="Bold" FontSize="16" />
+                        <TextBlock Text="edits HostMode.props (KnownPluginList)" FontSize="12"
+                                   Foreground="{StaticResource BrushTextMuted}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="Settings" Classes="ghost" Command="{Binding OpenSettingsCommand}" />
+                </Grid>
             </Border>
 
             <!-- ===================== Toolbar ===================== -->
@@ -50,6 +53,8 @@
                               IsEnabled="{Binding IsFileLoaded}" MinWidth="140" />
                     <Button Content="Check all filtered" IsEnabled="{Binding IsFileLoaded}" Command="{Binding CheckAllFilteredCommand}" />
                     <Button Content="Uncheck all" IsEnabled="{Binding IsFileLoaded}" Command="{Binding UncheckAllCommand}" />
+                    <Button Content="Check for missing maps" IsEnabled="{Binding IsFileLoaded}" Command="{Binding CheckMapAvailabilityCommand}"
+                            ToolTip.Tip="Cross-checks each plugin's uniqueId against RA Control's own local map cache (AvailableMaps.txt + Parameter Tables). Makes no network requests. Plugins with no map available anywhere are auto-checked for removal." />
                     <Button Command="{Binding OpenHistoryCommand}" Classes="ghost">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBlock Text="Removal history" />
@@ -89,6 +94,10 @@
                                IsVisible="{Binding RemovedThisSessionCount, Converter={StaticResource CountToVisible}}">
                         <Run Text="{Binding RemovedThisSessionCount}" /><Run Text=" removed this session (not yet saved)" />
                     </TextBlock>
+                    <TextBlock FontSize="12" Foreground="{StaticResource BrushGold}" FontWeight="SemiBold"
+                               IsVisible="{Binding MapsMissingCount, Converter={StaticResource CountToVisible}}">
+                        <Run Text="{Binding MapsMissingCount}" /><Run Text=" plugin(s) missing a map (auto-selected)" />
+                    </TextBlock>
                 </WrapPanel>
             </Border>
 
@@ -114,7 +123,7 @@
                 <Grid RowDefinitions="Auto,*" IsVisible="{Binding IsFileLoaded}">
 
                     <Border Grid.Row="0" Classes="tableHeader" Margin="20,12,20,0">
-                        <Grid ColumnDefinitions="40,2*,150,80,150,90,3*">
+                        <Grid ColumnDefinitions="40,2*,150,80,150,90,130,3*">
                             <TextBlock Grid.Column="0" />
                             <Button Grid.Column="1" Classes="headerSort" Content="Name"
                                     Command="{Binding SortByCommand}" CommandParameter="Name" />
@@ -126,7 +135,8 @@
                                     Command="{Binding SortByCommand}" CommandParameter="Category" />
                             <Button Grid.Column="5" Classes="headerSort" Content="Version"
                                     Command="{Binding SortByCommand}" CommandParameter="Version" />
-                            <Button Grid.Column="6" Classes="headerSort" Content="File"
+                            <TextBlock Grid.Column="6" Text="Map" />
+                            <Button Grid.Column="7" Classes="headerSort" Content="File"
                                     Command="{Binding SortByCommand}" CommandParameter="FilePath" />
                         </Grid>
                     </Border>
@@ -143,16 +153,21 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="models:PluginEntry">
                                         <Border Classes="pluginRow" Classes.marked="{Binding IsChecked}">
-                                            <Grid ColumnDefinitions="40,2*,150,80,150,90,3*">
+                                            <Grid ColumnDefinitions="40,2*,150,80,150,90,130,3*">
                                                 <CheckBox Grid.Column="0" IsChecked="{Binding IsChecked}"
                                                           VerticalAlignment="Center" />
-                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
-                                                    <Border Classes="chip-history" IsVisible="{Binding FromHistory}"
+                                                <Grid Grid.Column="1" ColumnDefinitions="*,Auto,Auto" VerticalAlignment="Center">
+                                                    <TextBlock Grid.Column="0" Text="{Binding Name}" FontWeight="Medium"
+                                                               TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                                                    <Border Grid.Column="1" Classes="chip-history" Margin="6,0,0,0" IsVisible="{Binding FromHistory}"
                                                             ToolTip.Tip="Previously removed — auto-selected">
                                                         <TextBlock Text="history" />
                                                     </Border>
-                                                </StackPanel>
+                                                    <Border Grid.Column="2" Classes="chip-history" Margin="6,0,0,0" IsVisible="{Binding IsMapNotAvailable}"
+                                                            ToolTip.Tip="No map available upstream — auto-selected for removal">
+                                                        <TextBlock Text="no map" />
+                                                    </Border>
+                                                </Grid>
                                                 <TextBlock Grid.Column="2" Text="{Binding Manufacturer}"
                                                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                 <Border Grid.Column="3" Classes="chip" HorizontalAlignment="Left" VerticalAlignment="Center">
@@ -164,7 +179,17 @@
                                                 <TextBlock Grid.Column="5" Text="{Binding Version}"
                                                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                                            Foreground="{StaticResource BrushTextMuted}" FontSize="12" />
-                                                <TextBlock Grid.Column="6" Text="{Binding FilePath}" ToolTip.Tip="{Binding FilePath}"
+                                                <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                    <CheckBox IsVisible="{Binding IsMapMissing}" IsChecked="{Binding IsSelectedForMap}"
+                                                              ToolTip.Tip="Selected for a future map download" />
+                                                    <Border Classes="chip" Classes.mapDownloaded="{Binding IsMapDownloaded}"
+                                                            Classes.mapMissing="{Binding IsMapMissing}"
+                                                            Classes.mapNotAvailable="{Binding IsMapNotAvailable}"
+                                                            HorizontalAlignment="Left">
+                                                        <TextBlock Text="{Binding MapStatusLabel}" />
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="7" Text="{Binding FilePath}" ToolTip.Tip="{Binding FilePath}"
                                                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                                            Foreground="{StaticResource BrushTextMuted}" FontSize="11"
                                                            FontFamily="Consolas,monospace" />
@@ -242,6 +267,44 @@
                                        Foreground="{StaticResource BrushTextMuted}" FontSize="11.5" VerticalAlignment="Center" />
                         </Grid>
                     </Border>
+                </Grid>
+            </Border>
+        </Border>
+
+        <!-- ===================== Settings overlay ===================== -->
+        <Border IsVisible="{Binding IsSettingsOpen}" Background="#AA0F1115">
+            <Border Background="{StaticResource BrushPanel}" BorderBrush="{StaticResource BrushBorder}"
+                    BorderThickness="1" CornerRadius="10" Width="440" MaxHeight="560"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid RowDefinitions="Auto,*">
+                    <Border Grid.Row="0" BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1" Padding="18,14">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Settings" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="Close" Classes="ghost" Command="{Binding CloseSettingsCommand}" />
+                        </Grid>
+                    </Border>
+                    <StackPanel Grid.Row="1" Spacing="12" Margin="18,14">
+                        <TextBlock Text="Your RA Control device(s)" FontWeight="SemiBold" FontSize="12.5" />
+                        <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                            RA Control's map cache is organized per controller model — a map listed for hardware
+                            you don't own won't actually be offered by RA Control. Select what you have so
+                            "Check for missing maps" only flags maps that apply to you.
+                        </TextBlock>
+
+                        <StackPanel IsVisible="{Binding !HasKnownControllerModels}" Spacing="4">
+                            <TextBlock Text="No device list found yet." FontWeight="SemiBold" FontSize="12.5" />
+                            <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}"
+                                       Text="Open Host Mode in RA Control at least once so it can build AvailableMaps.txt, then reopen Settings." />
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding ControllerModelOptions}" IsVisible="{Binding HasKnownControllerModels}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:ControllerModelOption">
+                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" Margin="0,4" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
                 </Grid>
             </Border>
         </Border>
