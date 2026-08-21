@@ -35,6 +35,10 @@ public partial class MainViewModel : ViewModelBase
     public MainViewModel()
     {
         RefreshHistoryPanel();
+        // Load the saved API token up front so "live" mode (CanLiveCheck) reflects reality
+        // from launch - previously this only happened when Settings was opened, so a
+        // saved token silently had no effect until the user opened and closed Settings once.
+        ApiToken = _settingsStore.Load().ApiToken;
     }
 
     // ------------------------------------------------------------------
