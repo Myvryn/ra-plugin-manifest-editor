@@ -105,6 +105,25 @@
     <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}" />
   </Style>
 
+  <!-- Small circular icon button (e.g. the "?" help trigger) -->
+  <Style Selector="Button.icon-circle">
+    <Setter Property="Width" Value="26" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="CornerRadius" Value="13" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}" />
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector="Button.icon-circle:pointerover /template/ ContentPresenter">
+    <Setter Property="BorderBrush" Value="{StaticResource BrushGold}" />
+  </Style>
+  <Style Selector="Button.icon-circle:pointerover">
+    <Setter Property="Foreground" Value="{StaticResource BrushGold}" />
+  </Style>
+
   <!-- ===================== Inputs ===================== -->
   <Style Selector="TextBox">
     <Setter Property="Background" Value="{StaticResource BrushPanel}" />

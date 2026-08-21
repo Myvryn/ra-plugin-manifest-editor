@@ -28,7 +28,7 @@
             <Border Grid.Row="0" Background="{StaticResource BrushPanel}"
                     BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1"
                     Padding="20,14">
-                <Grid ColumnDefinitions="*,Auto,Auto">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto">
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                         <TextBlock Text="RA Control" FontWeight="Bold" FontSize="16"
                                    Foreground="{StaticResource BrushGold}" />
@@ -44,7 +44,9 @@
                             </Border>
                         </StackPanel>
                     </Button>
-                    <Button Grid.Column="2" Content="Settings" Classes="ghost" Command="{Binding OpenSettingsCommand}" />
+                    <Button Grid.Column="2" Content="Settings" Classes="ghost" Command="{Binding OpenSettingsCommand}" Margin="0,0,8,0" />
+                    <Button Grid.Column="3" Content="?" Classes="icon-circle" Command="{Binding OpenHelpCommand}"
+                            ToolTip.Tip="Help" />
                 </Grid>
             </Border>
 
@@ -333,6 +335,134 @@
                             </StackPanel>
                         </Border>
                     </StackPanel>
+                </Grid>
+            </Border>
+        </Border>
+
+        <!-- ===================== Help overlay ===================== -->
+        <Border IsVisible="{Binding IsHelpOpen}" Background="#AA0F1115">
+            <Border Background="{StaticResource BrushPanel}" BorderBrush="{StaticResource BrushBorder}"
+                    BorderThickness="1" CornerRadius="10" Width="640" MaxHeight="700"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid RowDefinitions="Auto,*">
+                    <Border Grid.Row="0" BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1" Padding="18,14">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Help" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="Close" Classes="ghost" Command="{Binding CloseHelpCommand}" />
+                        </Grid>
+                    </Border>
+                    <ScrollViewer Grid.Row="1" Padding="18,14">
+                        <StackPanel Spacing="16">
+
+                            <Border Background="{StaticResource BrushPanelAlt}" BorderBrush="{StaticResource BrushBorder}"
+                                    BorderThickness="1" CornerRadius="6" Padding="12,10">
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    <Run FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" Text="Unofficial, third-party tool." />
+                                    <Run Text="This project is not created by, affiliated with, endorsed by, or sponsored by Rocksolid Audio. &quot;RA Control&quot; and any related names/marks belong to their respective owners and are used here only to describe compatibility. It works by editing a local config file (HostMode.props) and isn't supported by Rocksolid Audio — use at your own risk, and see &quot;Does it back up my file?&quot; below before relying on it." />
+                                </TextBlock>
+                            </Border>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="What this app does" FontWeight="SemiBold" FontSize="12.5" />
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    RA Control keeps a list of every plugin it's found on your system in a file called
+                                    HostMode.props — that's what populates the "Insert Plugins" list in Host Mode. This
+                                    app gives you a proper interface for curating that list: remove clutter (duplicates,
+                                    broken entries, plugins you don't use), and check which of your plugins already have
+                                    a real control Mapping from RA Control versus which are still missing one.
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Getting started" FontWeight="SemiBold" FontSize="12.5" />
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    Click "Open different file…" (or "Open HostMode.props…" if nothing's loaded) — the
+                                    file picker opens straight into RA Control's own Host Mode folder, so just
+                                    double-click HostMode.props. The app remembers the last file you opened and
+                                    reloads it automatically next launch. "Reload from disk" re-reads the current file
+                                    without reopening the picker — useful after RA Control's scanner has run again.
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Browsing and removing plugins" FontWeight="SemiBold" FontSize="12.5" />
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    Filter by name, manufacturer, format, or category with the search box and format
+                                    dropdown, or click any column header to sort. Check the plugins you want gone —
+                                    the checkbox in the table header checks or unchecks every currently filtered row at
+                                    once. Click "Remove checked (N)" to stage them for removal (nothing is written to
+                                    disk yet), then "Save changes" to write it back to HostMode.props. If you still have
+                                    plugins checked but never clicked "Remove checked," Save will stop and ask first, so
+                                    you can't lose a batch of intended removals by accident. "Save edited copy as…"
+                                    exports to a new file instead of overwriting the original.
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Removal history" FontWeight="SemiBold" FontSize="12.5" />
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    Every plugin you remove is remembered even after you close the app. If RA Control's
+                                    scanner ever re-adds a removed plugin, it's automatically pre-checked and tagged
+                                    "history" next time you open or reload the file, so clearing it out again is just
+                                    one more click. Open "Removal history" (next to Settings) to see everything you've
+                                    ever removed — "Restore" puts a plugin straight back into the currently open file,
+                                    "Forget" just stops it from being auto-selected without adding it back. Either way,
+                                    click "Save changes" afterward to write it to disk.
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Checking for maps" FontWeight="SemiBold" FontSize="12.5" />
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    The "Maps" menu in the toolbar cross-checks every plugin against RA Control's own
+                                    local map cache — no network calls, and plugins with no map available anywhere get
+                                    auto-checked for removal. If you've set an API token in Settings, the same "Check
+                                    for missing maps" action instead runs live against RA Control's own API, which
+                                    also unlocks "Download all maps" — fetches a real Mapping for everything marked
+                                    "Missing" and writes it to RA Control's own Host Maps folder, the same place its
+                                    own Download button writes to. A live check also re-checks your entire removal
+                                    history: if RA Control has since published a map for something you'd previously
+                                    removed, it'll ask whether you'd like to restore it.
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Settings" FontWeight="SemiBold" FontSize="12.5" />
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    Select which RA Control device(s) you own — the map cache is organized per
+                                    controller model, so this scopes "missing map" checks to hardware you actually
+                                    have. The API token field is entirely optional: this app ships with no API access
+                                    of its own, and everything except the live check and downloads works without one.
+                                    If you paste in your own token, it's encrypted at rest (Windows DPAPI, tied to your
+                                    Windows user account) before being saved — never stored as plain text.
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Does it back up my file?" FontWeight="SemiBold" FontSize="12.5" />
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    Yes. Every time you click "Save changes," the app copies whatever is currently on
+                                    disk to a timestamped backup (HostMode.props.bak-YYYYMMDD-HHmmss) in the same
+                                    folder, before writing anything — automatically, every save, no setup required. If
+                                    an edit goes wrong, the previous version is sitting right next to the file; just
+                                    rename it back to HostMode.props. These backups accumulate over time and aren't
+                                    auto-deleted, so it's worth clearing out old ones occasionally.
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Where things live" FontWeight="SemiBold" FontSize="12.5" />
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
+                                    The manifest and its backups stay in RA Control's own Host Mode folder, untouched
+                                    except when you hit Save. This app's own settings (last file, device selection,
+                                    encrypted API token) and removal history are stored separately, under
+                                    %APPDATA%\RAPluginManifestEditor — deleting them resets this tool without touching
+                                    RA Control itself.
+                                </TextBlock>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Border>
         </Border>

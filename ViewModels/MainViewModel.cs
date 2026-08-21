@@ -116,6 +116,9 @@ public partial class MainViewModel : ViewModelBase
     public partial bool IsSettingsOpen { get; set; }
 
     [ObservableProperty]
+    public partial bool IsHelpOpen { get; set; }
+
+    [ObservableProperty]
     public partial bool HasKnownControllerModels { get; set; }
 
     public ObservableCollection<ControllerModelOption> ControllerModelOptions { get; } = new();
@@ -663,6 +666,16 @@ public partial class MainViewModel : ViewModelBase
 
     [RelayCommand]
     private void CloseHistory() => IsHistoryOpen = false;
+
+    // ------------------------------------------------------------------
+    // Help
+    // ------------------------------------------------------------------
+
+    [RelayCommand]
+    private void OpenHelp() => IsHelpOpen = true;
+
+    [RelayCommand]
+    private void CloseHelp() => IsHelpOpen = false;
 
     [RelayCommand]
     private void RestoreHistoryItem(HistoryEntry? entry)
