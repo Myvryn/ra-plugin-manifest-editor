@@ -65,14 +65,26 @@ public static class AppPaths
         return File.Exists(path) ? path : null;
     }
 
-    /// <summary>Folder where RA Control stores maps it has already downloaded for this user
-    /// (flat *.json files named "PluginName (uniqueId).json").</summary>
-    public static string? GuessDownloadedMapsDir()
+    /// <summary>Base folder where RA Control caches actually-downloaded, plugin-specific
+    /// control Mappings ("Host Preset" JSON per plugin), laid out as
+    /// Host Maps/&lt;ControllerModel&gt;/&lt;Manufacturer&gt;/&lt;Plugin&gt; (&lt;uniqueId&gt;).json
+    /// — mirroring AvailableMaps.txt's own per-model folder scoping.
+    ///
+    /// This is NOT "Parameter Tables" (a separate, unrelated cache of a plugin's automatable
+    /// parameter *names*, written whenever RA Control loads/scans a plugin regardless of
+    /// whether any Mapping was ever downloaded for it — confirmed false-positive by direct
+    /// testing: a plugin can have a Parameter Table and still not be controllable until its
+    /// Mapping is explicitly downloaded). Confirmed by diffing the filesystem before/after a
+    /// real download: only a file under this folder changes.</summary>
+    public static string? GuessHostMapsDir()
     {
-        var hostModeDir = GuessHostModePropsDir();
-        if (hostModeDir is null) return null;
+        string? candidate = null;
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            candidate = Path.Combine(docs, "Rocksolid Audio", "RA Control", "Host Maps");
+        }
 
-        var dir = Path.Combine(hostModeDir, "Parameter Tables");
-        return Directory.Exists(dir) ? dir : null;
+        return candidate is not null && Directory.Exists(candidate) ? candidate : null;
     }
 }

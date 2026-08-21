@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using RAPluginManifestEditor.Models;
 
@@ -24,9 +25,9 @@ public class MapCheckResult
 }
 
 /// <summary>Cross-references the loaded manifest's plugins against RA Control's own
-/// locally-cached map index (AvailableMaps.txt) and already-downloaded Parameter Tables,
-/// purely by reading files RA Control itself already maintains on disk. Makes no network
-/// calls of its own.
+/// locally-cached map index (AvailableMaps.txt) and its Host Maps folder (actually-downloaded,
+/// plugin-specific control Mappings — see AppPaths.GuessHostMapsDir), purely by reading files
+/// RA Control itself already maintains on disk. Makes no network calls of its own.
 ///
 /// AvailableMaps.txt is organized per controller hardware model (one top-level folder per
 /// model, e.g. "Micro 3/Waves/..."), so "available" is scoped to whichever model(s) the
@@ -61,7 +62,7 @@ public class MapAvailabilityService
     public MapCheckResult Evaluate(IEnumerable<PluginEntry> plugins, IReadOnlyCollection<string> selectedControllerModels)
     {
         var availablePath = AppPaths.GuessAvailableMapsPath();
-        var downloadedDir = AppPaths.GuessDownloadedMapsDir();
+        var hostMapsDir = AppPaths.GuessHostMapsDir();
 
         if (availablePath is null)
         {
@@ -85,9 +86,9 @@ public class MapAvailabilityService
 
         var selected = new HashSet<string>(selectedControllerModels, StringComparer.OrdinalIgnoreCase);
         var availableIds = LoadAvailableUniqueIds(File.ReadLines(availablePath), selected);
-        var downloadedIds = downloadedDir is null
+        var downloadedIds = hostMapsDir is null
             ? new HashSet<string>()
-            : LoadUniqueIds(Directory.EnumerateFiles(downloadedDir, "*.json", SearchOption.AllDirectories));
+            : LoadDownloadedUniqueIds(hostMapsDir, selected);
 
         int available = 0, downloaded = 0, missing = 0, notAvailable = 0;
         foreach (var p in plugins)
@@ -152,14 +153,44 @@ public class MapAvailabilityService
         return ids;
     }
 
-    private static HashSet<string> LoadUniqueIds(IEnumerable<string> pathsOrLines)
+    /// <summary>Scans Host Maps/&lt;model&gt;/ for each selected controller model and returns
+    /// the uniqueIds of plugins with a real, downloaded control Mapping — filtering out stub
+    /// files RA Control sometimes writes (e.g. just {"Host Preset": [{"Parameter Count": N}]}
+    /// with no actual "parameter" entries) which aren't a usable Mapping.</summary>
+    private static HashSet<string> LoadDownloadedUniqueIds(string hostMapsDir, HashSet<string> selectedControllerModels)
     {
         var ids = new HashSet<string>();
-        foreach (var line in pathsOrLines)
+        foreach (var model in selectedControllerModels)
         {
-            var match = UniqueIdInParens.Match(line);
-            if (match.Success) ids.Add(match.Groups[1].Value.ToLowerInvariant());
+            var modelDir = Path.Combine(hostMapsDir, model);
+            if (!Directory.Exists(modelDir)) continue;
+
+            foreach (var file in Directory.EnumerateFiles(modelDir, "*.json", SearchOption.AllDirectories))
+            {
+                var match = UniqueIdInParens.Match(file);
+                if (match.Success && IsRealHostPreset(file)) ids.Add(match.Groups[1].Value.ToLowerInvariant());
+            }
         }
         return ids;
+    }
+
+    private static bool IsRealHostPreset(string path)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            if (!doc.RootElement.TryGetProperty("Host Preset", out var preset) || preset.ValueKind != JsonValueKind.Array)
+                return false;
+
+            foreach (var entry in preset.EnumerateArray())
+            {
+                if (entry.ValueKind == JsonValueKind.Object && entry.TryGetProperty("parameter", out _)) return true;
+            }
+            return false;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException)
+        {
+            return false;
+        }
     }
 }
