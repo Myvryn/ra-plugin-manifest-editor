@@ -419,6 +419,12 @@ public partial class MainViewModel : ViewModelBase
         LiveCheckProgressLabel = "Starting…";
         try
         {
+            // Always (re-)run the offline pass first so plugins with a local Parameter
+            // Table are marked Downloaded before filtering — otherwise every plugin is
+            // still at its default Unknown and gets swept into the live pass, which can
+            // only ever produce AvailableNotDownloaded/NotAvailable, never Downloaded.
+            _mapAvailabilityService.Evaluate(_allPlugins, selectedModels);
+
             var progress = new Progress<(int done, int total)>(p => LiveCheckProgressLabel = $"Checking {p.done}/{p.total}…");
             var result = await _liveMapAvailabilityService.EvaluateAsync(
                 _allPlugins, selectedModels, ApiToken.Trim(), progress, CancellationToken.None);
