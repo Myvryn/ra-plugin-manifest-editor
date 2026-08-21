@@ -42,6 +42,7 @@ public class HistoryStore
                 Key = p.Key,
                 Name = p.Name,
                 Manufacturer = p.Manufacturer,
+                UniqueId = p.UniqueId,
                 Format = p.Format,
                 Category = p.Category,
                 File = p.FilePath,

@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using RAPluginManifestEditor.Models;
@@ -84,7 +85,7 @@ public class LiveMapAvailabilityService
             {
                 try
                 {
-                    var found = await IsAvailableForAnyModelAsync(plugin, models, apiToken, cancellationToken);
+                    var found = await IsAvailableForAnyModelAsync(plugin.Name, plugin.Manufacturer, plugin.UniqueId, models, apiToken, cancellationToken);
                     lock (syncRoot)
                     {
                         if (found is null)
@@ -117,11 +118,11 @@ public class LiveMapAvailabilityService
     /// <summary>Null means the check itself failed (network error, bad token, etc.) -
     /// distinct from a confirmed "false".</summary>
     private static async Task<bool?> IsAvailableForAnyModelAsync(
-        PluginEntry plugin, List<string> models, string apiToken, CancellationToken cancellationToken)
+        string name, string manufacturer, string uniqueId, List<string> models, string apiToken, CancellationToken cancellationToken)
     {
         foreach (var model in models)
         {
-            var result = await FindFileInPathAsync(model, plugin, apiToken, cancellationToken);
+            var result = await FindFileInPathAsync(model, name, manufacturer, uniqueId, apiToken, cancellationToken);
             if (result is null) return null; // request itself failed - report as failed, don't guess
             if (result.Value) return true;
         }
@@ -130,14 +131,14 @@ public class LiveMapAvailabilityService
     }
 
     private static async Task<bool?> FindFileInPathAsync(
-        string controllerModel, PluginEntry plugin, string apiToken, CancellationToken cancellationToken)
+        string controllerModel, string name, string manufacturer, string uniqueId, string apiToken, CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBase}/v1/drive/findFileInPath")
         {
             Content = JsonContent.Create(new FindFileRequest(
                 BasePath,
-                $"{controllerModel}/{plugin.Manufacturer}/",
-                $"{plugin.Name} ({plugin.UniqueId}).json")),
+                $"{controllerModel}/{manufacturer}/",
+                $"{name} ({uniqueId}).json")),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
 
@@ -154,6 +155,76 @@ public class LiveMapAvailabilityService
         {
             return null;
         }
+    }
+
+    public record RemovedPluginCheckResult(int Checked, List<HistoryEntry> NowAvailable, int Failed);
+
+    // Matches HistoryEntry.Key's fallback-free form ("<Format>::<UniqueId>") so older
+    // history entries (saved before HistoryEntry.UniqueId existed) can still be checked,
+    // by recovering the id from the same string that was already being persisted. The
+    // Name@FilePath fallback form (used when a plugin never had a real uniqueId) doesn't
+    // match this pattern and is correctly excluded - there's nothing to look up for those.
+    private static readonly Regex KeyUniqueId = new(@"^[^:]+::([0-9a-fA-F]{4,16})$", RegexOptions.Compiled);
+
+    private static string? ResolveUniqueId(HistoryEntry entry)
+    {
+        if (!string.IsNullOrWhiteSpace(entry.UniqueId) && entry.UniqueId != "0") return entry.UniqueId;
+        var match = KeyUniqueId.Match(entry.Key);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    /// <summary>Re-checks previously-removed plugins (removal history) against RA Control's
+    /// live API, to catch the case where RA Control has since published a map for something
+    /// that was removed for lacking one - "Have map" is time-varying (RA Control periodically
+    /// releases new maps), but removal history is a one-time decision, so nothing else in
+    /// this app ever revisits a removed plugin's map status after the fact. Only entries a
+    /// uniqueId can be recovered for (see <see cref="ResolveUniqueId"/>) can be checked.
+    /// Doesn't mutate anything - the caller decides what to do with the hits (e.g. offer to
+    /// restore them).</summary>
+    public async Task<RemovedPluginCheckResult> CheckRemovedForNewMapsAsync(
+        IReadOnlyList<HistoryEntry> removedPlugins,
+        IReadOnlyCollection<string> selectedControllerModels,
+        string apiToken,
+        IProgress<(int done, int total)>? progress,
+        CancellationToken cancellationToken)
+    {
+        var toCheck = removedPlugins
+            .Select(h => (Entry: h, UniqueId: ResolveUniqueId(h)))
+            .Where(x => x.UniqueId is not null)
+            .ToList();
+        var models = new List<string>(selectedControllerModels);
+        var semaphore = new SemaphoreSlim(MaxConcurrency);
+        var tasks = new List<Task>();
+        int done = 0, failed = 0;
+        var nowAvailable = new List<HistoryEntry>();
+        var syncRoot = new object();
+
+        foreach (var (entry, uniqueId) in toCheck)
+        {
+            await semaphore.WaitAsync(cancellationToken);
+            tasks.Add(Task.Run(async () =>
+            {
+                try
+                {
+                    var found = await IsAvailableForAnyModelAsync(entry.Name, entry.Manufacturer, uniqueId!, models, apiToken, cancellationToken);
+                    lock (syncRoot)
+                    {
+                        if (found is null) failed++;
+                        else if (found.Value) nowAvailable.Add(entry);
+
+                        done++;
+                        progress?.Report((done, toCheck.Count));
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }, cancellationToken));
+        }
+
+        await Task.WhenAll(tasks);
+        return new RemovedPluginCheckResult(done, nowAvailable, failed);
     }
 
     private record FindFileRequest(

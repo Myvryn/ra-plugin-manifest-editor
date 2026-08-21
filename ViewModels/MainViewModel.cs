@@ -506,12 +506,49 @@ public partial class MainViewModel : ViewModelBase
                   $"{result.Failed} failed (check your API token and network connection)."
                 : $"Live check complete — {result.Checked} plugin(s) re-verified against RA Control's live API, " +
                   $"{result.Confirmed} confirmed available.";
+
+            await OfferRestoreForNewlyAvailableAsync(selectedModels);
         }
         finally
         {
             IsLiveChecking = false;
             LiveCheckProgressLabel = null;
         }
+    }
+
+    /// <summary>Re-checks removal history against RA Control's live API - RA Control
+    /// periodically publishes new maps, so a plugin removed for lacking one can have a map
+    /// available later even though nothing else in this app ever revisits that decision.
+    /// If any are now available, asks the user (once, for the whole batch) whether to
+    /// restore them. Declining leaves them in history untouched - they'll be offered again
+    /// on the next live check, so nothing is lost by saying no.</summary>
+    private async Task OfferRestoreForNewlyAvailableAsync(List<string> selectedModels)
+    {
+        var removed = _historyStore.Load();
+        if (removed.Count == 0) return;
+
+        var progress = new Progress<(int done, int total)>(p => LiveCheckProgressLabel = $"Checking removed plugins {p.done}/{p.total}…");
+        var result = await _liveMapAvailabilityService.CheckRemovedForNewMapsAsync(
+            removed, selectedModels, ApiToken!.Trim(), progress, CancellationToken.None);
+
+        if (result.NowAvailable.Count == 0) return;
+
+        var names = string.Join("\n", result.NowAvailable.Select(h => $"• {h.Name} ({h.Manufacturer})"));
+        var confirmed = ConfirmAsync is null || await ConfirmAsync(
+            "New maps for previously removed plugins",
+            $"RA Control now has a map for {result.NowAvailable.Count} plugin(s) you'd previously removed:\n\n{names}\n\n" +
+            "Restore them to your list?");
+
+        if (!confirmed)
+        {
+            StatusLog = $"{result.NowAvailable.Count} previously-removed plugin(s) now have a map available, but left as removed.";
+            return;
+        }
+
+        var restoredCount = result.NowAvailable.Count(PerformRestore);
+        ApplyFilter();
+        RefreshHistoryPanel();
+        StatusLog = $"Restored {restoredCount} previously-removed plugin(s) — a map is now available for them. Click \"Save changes\" to write it back to the file.";
     }
 
     /// <summary>Downloads a real Mapping for every plugin currently AvailableNotDownloaded,
@@ -631,7 +668,20 @@ public partial class MainViewModel : ViewModelBase
     private void RestoreHistoryItem(HistoryEntry? entry)
     {
         if (entry is null) return;
+        if (!PerformRestore(entry)) return;
 
+        ApplyFilter();
+        RefreshHistoryPanel();
+        StatusLog = $"Restored \"{entry.Name}\". Click \"Save changes\" to write it back to the file.";
+    }
+
+    /// <summary>Core of restoring a single history entry back into the loaded manifest -
+    /// shared by the single-item RestoreHistoryItem command and the bulk restore offered by
+    /// <see cref="OfferRestoreForNewlyAvailableAsync"/>. Doesn't refresh the filtered view,
+    /// history panel, or StatusLog - callers do that once after all restores are done, so a
+    /// bulk restore doesn't re-render per item.</summary>
+    private bool PerformRestore(HistoryEntry entry)
+    {
         var existing = _allPlugins.FirstOrDefault(p => p.Key == entry.Key);
         if (existing is not null)
         {
@@ -642,7 +692,7 @@ public partial class MainViewModel : ViewModelBase
         else if (_document is null)
         {
             StatusLog = "Open a HostMode.props file before restoring a plugin.";
-            return;
+            return false;
         }
         else
         {
@@ -651,7 +701,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 StatusLog = $"Can't restore \"{entry.Name}\" — no saved XML for it " +
                             "(it was removed before this version added restore support).";
-                return;
+                return false;
             }
 
             WireCountRecompute(restored);
@@ -660,9 +710,7 @@ public partial class MainViewModel : ViewModelBase
         }
 
         _historyStore.Forget(entry.Key);
-        ApplyFilter();
-        RefreshHistoryPanel();
-        StatusLog = $"Restored \"{entry.Name}\". Click \"Save changes\" to write it back to the file.";
+        return true;
     }
 
     [RelayCommand]
