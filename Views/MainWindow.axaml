@@ -69,10 +69,10 @@
                         <Button.Flyout>
                             <MenuFlyout Placement="BottomEdgeAlignedLeft">
                                 <MenuItem Header="{Binding CheckMapsMenuLabel}" Command="{Binding CheckMapAvailabilityCommand}"
-                                          ToolTip.Tip="Cross-checks each plugin's uniqueId against RA Control's own local map cache (AvailableMaps.txt + Host Maps). Makes no network requests. If you've set an API token in Settings, this also re-verifies live against RA Control's own API for anything the local cache couldn't confidently resolve. Plugins with no map available anywhere are auto-checked for removal." />
+                                          ToolTip.Tip="Cross-checks each plugin's uniqueId against RA Control's own local map cache (AvailableMaps.txt + Host Maps). Makes no network requests. Plugins with no map available anywhere are auto-checked for removal." />
                                 <MenuItem Header="{Binding DownloadMapsProgressLabel, FallbackValue='Download all maps', TargetNullValue='Download all maps'}"
                                           IsVisible="{Binding CanLiveCheck}" Command="{Binding DownloadAllMapsCommand}"
-                                          ToolTip.Tip="Downloads a real Mapping for every plugin marked 'Missing' and writes it to RA Control's own Host Maps folder — the same place its own Download button writes to. Requires an API token set in Settings." />
+                                          ToolTip.Tip="Downloads a real Mapping for every plugin marked 'Missing' and writes it to RA Control's own Host Maps folder — the same place its own Download button writes to." />
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
@@ -322,7 +322,8 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Border BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,12,0,0">
+                        <Border BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,12,0,0"
+                                IsVisible="{Binding CanConfigureLiveToken}">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Live availability check (optional)" FontWeight="SemiBold" FontSize="12.5" />
                                 <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
@@ -415,14 +416,8 @@
                                 <TextBlock Text="Checking for maps" FontWeight="SemiBold" FontSize="12.5" />
                                 <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
                                     The "Maps" menu in the toolbar cross-checks every plugin against RA Control's own
-                                    local map cache — no network calls, and plugins with no map available anywhere get
-                                    auto-checked for removal. If you've set an API token in Settings, the same "Check
-                                    for missing maps" action instead runs live against RA Control's own API, which
-                                    also unlocks "Download all maps" — fetches a real Mapping for everything marked
-                                    "Missing" and writes it to RA Control's own Host Maps folder, the same place its
-                                    own Download button writes to. A live check also re-checks your entire removal
-                                    history: if RA Control has since published a map for something you'd previously
-                                    removed, it'll ask whether you'd like to restore it.
+                                    local map cache — no network calls. Plugins with no map available anywhere get
+                                    auto-checked for removal.
                                 </TextBlock>
                             </StackPanel>
 
@@ -431,10 +426,7 @@
                                 <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
                                     Select which RA Control device(s) you own — the map cache is organized per
                                     controller model, so this scopes "missing map" checks to hardware you actually
-                                    have. The API token field is entirely optional: this app ships with no API access
-                                    of its own, and everything except the live check and downloads works without one.
-                                    If you paste in your own token, it's encrypted at rest (Windows DPAPI, tied to your
-                                    Windows user account) before being saved — never stored as plain text.
+                                    have.
                                 </TextBlock>
                             </StackPanel>
 
@@ -454,8 +446,8 @@
                                 <TextBlock Text="Where things live" FontWeight="SemiBold" FontSize="12.5" />
                                 <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource BrushTextMuted}">
                                     The manifest and its backups stay in RA Control's own Host Mode folder, untouched
-                                    except when you hit Save. This app's own settings (last file, device selection,
-                                    encrypted API token) and removal history are stored separately, under
+                                    except when you hit Save. This app's own settings (last file, device selection)
+                                    and removal history are stored separately, under
                                     %APPDATA%\RAPluginManifestEditor — deleting them resets this tool without touching
                                     RA Control itself.
                                 </TextBlock>

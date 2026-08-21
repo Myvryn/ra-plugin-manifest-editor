@@ -126,6 +126,16 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial string? ApiToken { get; set; }
 
+    // Undocumented on purpose - not mentioned in README or the in-app Help. Keeps the token
+    // field itself out of Settings for anyone who hasn't been told this flag exists;
+    // launching normally (e.g. via the desktop shortcut) never surfaces it. A token already
+    // saved from a previous session still works and still drives CanLiveCheck below
+    // regardless of this flag - only the ability to view/edit/clear it via Settings is gated.
+    private static readonly bool LiveTokenFieldUnlocked =
+        Environment.GetCommandLineArgs().Any(a => string.Equals(a, "--live-token", StringComparison.OrdinalIgnoreCase));
+
+    public bool CanConfigureLiveToken => LiveTokenFieldUnlocked;
+
     [ObservableProperty]
     public partial bool IsLiveChecking { get; set; }
 
