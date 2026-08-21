@@ -21,6 +21,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly HistoryStore _historyStore = new();
     private readonly MapAvailabilityService _mapAvailabilityService = new();
     private readonly LiveMapAvailabilityService _liveMapAvailabilityService = new();
+    private readonly HostMapDownloadService _hostMapDownloadService = new();
 
     private XDocument? _document;
     private List<PluginEntry> _allPlugins = new();
@@ -104,6 +105,12 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial string? LiveCheckProgressLabel { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsDownloadingMaps { get; set; }
+
+    [ObservableProperty]
+    public partial string? DownloadMapsProgressLabel { get; set; }
 
     public bool CanLiveCheck => !string.IsNullOrWhiteSpace(ApiToken);
 
@@ -444,6 +451,62 @@ public partial class MainViewModel : ViewModelBase
         {
             IsLiveChecking = false;
             LiveCheckProgressLabel = null;
+        }
+    }
+
+    /// <summary>Downloads a real Mapping for every plugin currently AvailableNotDownloaded,
+    /// writing it to RA Control's own Host Maps cache exactly as if its "Download" button had
+    /// been clicked for each one (confirmed by direct test — see the private
+    /// ra-control-api-research repo). Requires an API token in Settings; this app never ships
+    /// one. Run "Check for missing maps (live)" first for the most accurate list of what
+    /// actually needs downloading.</summary>
+    [RelayCommand]
+    private async Task DownloadAllMapsAsync()
+    {
+        if (IsDownloadingMaps || IsLiveChecking || _allPlugins.Count == 0 || string.IsNullOrWhiteSpace(ApiToken)) return;
+
+        var selectedModels = _settingsStore.Load().SelectedControllerModels;
+        if (selectedModels.Count == 0)
+        {
+            StatusLog = "Select which RA Control device(s) you have in Settings first — map availability is specific to your hardware.";
+            return;
+        }
+
+        var toDownload = _allPlugins.Count(p => p.MapAvailability == MapAvailability.AvailableNotDownloaded);
+        if (toDownload == 0)
+        {
+            StatusLog = "Nothing to download — no plugins are currently marked as having a map available but not downloaded.";
+            return;
+        }
+
+        var confirmed = ConfirmAsync is null || await ConfirmAsync(
+            "Download all maps",
+            $"Download {toDownload} Mapping(s) from RA Control's own API and write them to your local Host Maps " +
+            "folder — the same place RA Control's own \"Download\" button writes to? RA Control will pick these up " +
+            "next time it loads each plugin.");
+        if (!confirmed) return;
+
+        IsDownloadingMaps = true;
+        DownloadMapsProgressLabel = "Starting…";
+        try
+        {
+            var progress = new Progress<(int done, int total)>(p => DownloadMapsProgressLabel = $"Downloading {p.done}/{p.total}…");
+            var result = await _hostMapDownloadService.DownloadAllAsync(
+                _allPlugins, selectedModels, ApiToken.Trim(), progress, CancellationToken.None);
+
+            MapsDownloadedCount = _allPlugins.Count(p => p.MapAvailability == MapAvailability.Downloaded);
+            MapsMissingCount = _allPlugins.Count(p => p.MapAvailability == MapAvailability.AvailableNotDownloaded);
+            RecomputeCounts();
+
+            StatusLog = result.Failed > 0
+                ? $"Downloaded {result.Downloaded} of {result.Attempted} map(s); {result.Failed} failed " +
+                  "(check your API token and network connection)."
+                : $"Downloaded {result.Downloaded} map(s) — RA Control will use them next time it loads each plugin.";
+        }
+        finally
+        {
+            IsDownloadingMaps = false;
+            DownloadMapsProgressLabel = null;
         }
     }
 

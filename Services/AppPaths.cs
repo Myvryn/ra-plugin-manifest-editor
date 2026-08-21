@@ -87,4 +87,15 @@ public static class AppPaths
 
         return candidate is not null && Directory.Exists(candidate) ? candidate : null;
     }
+
+    /// <summary>Same location as <see cref="GuessHostMapsDir"/>, but creates it if it
+    /// doesn't exist yet (e.g. a fresh install that's never downloaded a Mapping through RA
+    /// Control's own UI). Used when writing a Mapping ourselves.</summary>
+    public static string GetOrCreateHostMapsDir()
+    {
+        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        var dir = Path.Combine(docs, "Rocksolid Audio", "RA Control", "Host Maps");
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
 }
