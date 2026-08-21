@@ -28,7 +28,7 @@
             <Border Grid.Row="0" Background="{StaticResource BrushPanel}"
                     BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1"
                     Padding="20,14">
-                <Grid ColumnDefinitions="*,Auto">
+                <Grid ColumnDefinitions="*,Auto,Auto">
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                         <TextBlock Text="RA Control" FontWeight="Bold" FontSize="16"
                                    Foreground="{StaticResource BrushGold}" />
@@ -36,7 +36,15 @@
                         <TextBlock Text="edits HostMode.props (KnownPluginList)" FontSize="12"
                                    Foreground="{StaticResource BrushTextMuted}" VerticalAlignment="Center" />
                     </StackPanel>
-                    <Button Grid.Column="1" Content="Settings" Classes="ghost" Command="{Binding OpenSettingsCommand}" />
+                    <Button Grid.Column="1" Command="{Binding OpenHistoryCommand}" Classes="ghost" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Removal history" />
+                            <Border Classes="chip-history" IsVisible="{Binding HistoryItems.Count, Converter={StaticResource CountToVisible}}">
+                                <TextBlock Text="{Binding HistoryItems.Count}" />
+                            </Border>
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="2" Content="Settings" Classes="ghost" Command="{Binding OpenSettingsCommand}" />
                 </Grid>
             </Border>
 
@@ -51,30 +59,20 @@
                               IsEnabled="{Binding IsFileLoaded}" Width="320" />
                     <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}"
                               IsEnabled="{Binding IsFileLoaded}" MinWidth="140" />
-                    <Button Content="Check all filtered" IsEnabled="{Binding IsFileLoaded}" Command="{Binding CheckAllFilteredCommand}" />
-                    <Button Content="Uncheck all" IsEnabled="{Binding IsFileLoaded}" Command="{Binding UncheckAllCommand}" />
-                    <Button Content="Check for missing maps" IsEnabled="{Binding IsFileLoaded}" Command="{Binding CheckMapAvailabilityCommand}"
-                            ToolTip.Tip="Cross-checks each plugin's uniqueId against RA Control's own local map cache (AvailableMaps.txt + Host Maps). Makes no network requests. Plugins with no map available anywhere are auto-checked for removal." />
-                    <Button Content="{Binding LiveCheckProgressLabel, FallbackValue='Check for missing maps (live)', TargetNullValue='Check for missing maps (live)'}"
-                            IsVisible="{Binding CanLiveCheck}" IsEnabled="{Binding IsFileLoaded}"
-                            Command="{Binding CheckMapAvailabilityLiveCommand}"
-                            ToolTip.Tip="Re-verifies plugins with no locally downloaded map against RA Control's own live API (findFileInPath only — never downloads), instead of trusting the possibly-stale local cache. Requires an API token set in Settings." />
-                    <Button Content="{Binding DownloadMapsProgressLabel, FallbackValue='Download all maps', TargetNullValue='Download all maps'}"
-                            IsVisible="{Binding CanLiveCheck}" IsEnabled="{Binding IsFileLoaded}"
-                            Command="{Binding DownloadAllMapsCommand}"
-                            ToolTip.Tip="Downloads a real Mapping for every plugin marked 'Missing' and writes it to RA Control's own Host Maps folder — the same place its own Download button writes to. Requires an API token set in Settings." />
-                    <Button Command="{Binding OpenHistoryCommand}" Classes="ghost">
+                    <Button IsEnabled="{Binding IsFileLoaded}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="Removal history" />
-                            <Border Classes="chip-history" IsVisible="{Binding HistoryItems.Count, Converter={StaticResource CountToVisible}}">
-                                <TextBlock Text="{Binding HistoryItems.Count}" />
-                            </Border>
+                            <TextBlock Text="{Binding MapsButtonLabel}" />
+                            <TextBlock Text="▾" Foreground="{StaticResource BrushTextMuted}" />
                         </StackPanel>
-                    </Button>
-                    <Button Classes="outline-red" IsEnabled="{Binding IsFileLoaded}" Command="{Binding RemoveCheckedCommand}">
-                        <TextBlock>
-                            <Run Text="Remove checked (" /><Run Text="{Binding CheckedCount}" /><Run Text=")" />
-                        </TextBlock>
+                        <Button.Flyout>
+                            <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                <MenuItem Header="{Binding CheckMapsMenuLabel}" Command="{Binding CheckMapAvailabilityCommand}"
+                                          ToolTip.Tip="Cross-checks each plugin's uniqueId against RA Control's own local map cache (AvailableMaps.txt + Host Maps). Makes no network requests. If you've set an API token in Settings, this also re-verifies live against RA Control's own API for anything the local cache couldn't confidently resolve. Plugins with no map available anywhere are auto-checked for removal." />
+                                <MenuItem Header="{Binding DownloadMapsProgressLabel, FallbackValue='Download all maps', TargetNullValue='Download all maps'}"
+                                          IsVisible="{Binding CanLiveCheck}" Command="{Binding DownloadAllMapsCommand}"
+                                          ToolTip.Tip="Downloads a real Mapping for every plugin marked 'Missing' and writes it to RA Control's own Host Maps folder — the same place its own Download button writes to. Requires an API token set in Settings." />
+                            </MenuFlyout>
+                        </Button.Flyout>
                     </Button>
                 </WrapPanel>
             </Border>
@@ -84,29 +82,36 @@
                     Background="{StaticResource BrushPanel}"
                     BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1"
                     Padding="20,8">
-                <WrapPanel ItemSpacing="18" LineSpacing="4">
-                    <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12">
-                        <Run Text="Total: " /><Run Text="{Binding TotalCount}" FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" />
-                    </TextBlock>
-                    <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12">
-                        <Run Text="Shown: " /><Run Text="{Binding ShownCount}" FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" />
-                    </TextBlock>
-                    <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12">
-                        <Run Text="Checked: " /><Run Text="{Binding CheckedCount}" FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" />
-                    </TextBlock>
-                    <TextBlock FontSize="12" Foreground="{StaticResource BrushGreen}" FontWeight="SemiBold"
-                               IsVisible="{Binding AutoCheckedCount, Converter={StaticResource CountToVisible}}">
-                        <Run Text="{Binding AutoCheckedCount}" /><Run Text=" auto-selected from removal history" />
-                    </TextBlock>
-                    <TextBlock FontSize="12" Foreground="{StaticResource BrushRed}" FontWeight="SemiBold"
-                               IsVisible="{Binding RemovedThisSessionCount, Converter={StaticResource CountToVisible}}">
-                        <Run Text="{Binding RemovedThisSessionCount}" /><Run Text=" removed this session (not yet saved)" />
-                    </TextBlock>
-                    <TextBlock FontSize="12" Foreground="{StaticResource BrushGold}" FontWeight="SemiBold"
-                               IsVisible="{Binding MapsMissingCount, Converter={StaticResource CountToVisible}}">
-                        <Run Text="{Binding MapsMissingCount}" /><Run Text=" plugin(s) missing a map (auto-selected)" />
-                    </TextBlock>
-                </WrapPanel>
+                <Grid ColumnDefinitions="*,Auto">
+                    <WrapPanel Grid.Column="0" ItemSpacing="18" LineSpacing="4" VerticalAlignment="Center">
+                        <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12">
+                            <Run Text="Total: " /><Run Text="{Binding TotalCount}" FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" />
+                        </TextBlock>
+                        <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12">
+                            <Run Text="Shown: " /><Run Text="{Binding ShownCount}" FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" />
+                        </TextBlock>
+                        <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12">
+                            <Run Text="Checked: " /><Run Text="{Binding CheckedCount}" FontWeight="Bold" Foreground="{StaticResource BrushTextPrimary}" />
+                        </TextBlock>
+                        <TextBlock FontSize="12" Foreground="{StaticResource BrushGreen}" FontWeight="SemiBold"
+                                   IsVisible="{Binding AutoCheckedCount, Converter={StaticResource CountToVisible}}">
+                            <Run Text="{Binding AutoCheckedCount}" /><Run Text=" auto-selected from removal history" />
+                        </TextBlock>
+                        <TextBlock FontSize="12" Foreground="{StaticResource BrushRed}" FontWeight="SemiBold"
+                                   IsVisible="{Binding RemovedThisSessionCount, Converter={StaticResource CountToVisible}}">
+                            <Run Text="{Binding RemovedThisSessionCount}" /><Run Text=" removed this session (not yet saved)" />
+                        </TextBlock>
+                        <TextBlock FontSize="12" Foreground="{StaticResource BrushGold}" FontWeight="SemiBold"
+                                   IsVisible="{Binding MapsMissingCount, Converter={StaticResource CountToVisible}}">
+                            <Run Text="{Binding MapsMissingCount}" /><Run Text=" plugin(s) missing a map (auto-selected)" />
+                        </TextBlock>
+                    </WrapPanel>
+                    <Button Grid.Column="1" Classes="outline-red" Command="{Binding RemoveCheckedCommand}" VerticalAlignment="Center">
+                        <TextBlock>
+                            <Run Text="Remove checked (" /><Run Text="{Binding CheckedCount}" /><Run Text=")" />
+                        </TextBlock>
+                    </Button>
+                </Grid>
             </Border>
 
             <!-- ===================== Main content ===================== -->
@@ -132,7 +137,9 @@
 
                     <Border Grid.Row="0" Classes="tableHeader" Margin="20,12,20,0">
                         <Grid ColumnDefinitions="40,2*,150,80,150,90,130,3*">
-                            <TextBlock Grid.Column="0" />
+                            <CheckBox Grid.Column="0" IsChecked="{Binding HeaderCheckState}"
+                                      VerticalAlignment="Center" HorizontalAlignment="Center"
+                                      ToolTip.Tip="Check/uncheck all currently filtered plugins" />
                             <Button Grid.Column="1" Classes="headerSort" Content="Name"
                                     Command="{Binding SortByCommand}" CommandParameter="Name" />
                             <Button Grid.Column="2" Classes="headerSort" Content="Manufacturer"

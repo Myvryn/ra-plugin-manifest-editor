@@ -65,6 +65,25 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial int CheckedCount { get; set; }
 
+    /// <summary>Backs the table header's select-all checkbox. Getter: true only if every
+    /// currently filtered/visible plugin is checked (no indeterminate/tri-state - this
+    /// environment's CheckBox theme doesn't render bool? null as indeterminate, so a plain
+    /// two-state checkbox is used instead: unchecked covers both "none" and "some" checked).
+    /// Setter ignores the incoming value and is deterministic instead - checks every
+    /// filtered plugin unless they're already all checked, in which case it unchecks them -
+    /// so a click always checks the rest first, matching standard data-grid header-checkbox
+    /// behavior. Scoped to FilteredPlugins, not _allPlugins, so it only ever reflects/affects
+    /// what's actually visible under the current search/format filter.</summary>
+    public bool HeaderCheckState
+    {
+        get => FilteredPlugins.Count > 0 && FilteredPlugins.All(p => p.IsChecked);
+        set
+        {
+            var shouldCheck = !(FilteredPlugins.Count > 0 && FilteredPlugins.All(p => p.IsChecked));
+            foreach (var p in FilteredPlugins) p.IsChecked = shouldCheck;
+        }
+    }
+
     [ObservableProperty]
     public partial int AutoCheckedCount { get; set; }
 
@@ -114,7 +133,43 @@ public partial class MainViewModel : ViewModelBase
 
     public bool CanLiveCheck => !string.IsNullOrWhiteSpace(ApiToken);
 
-    partial void OnApiTokenChanged(string? value) => OnPropertyChanged(nameof(CanLiveCheck));
+    partial void OnApiTokenChanged(string? value)
+    {
+        OnPropertyChanged(nameof(CanLiveCheck));
+        OnPropertyChanged(nameof(CheckMapsMenuLabel));
+    }
+
+    /// <summary>Label for the toolbar's consolidated "Maps" dropdown button - shows whichever
+    /// map operation is currently running (live check or download-all), or just "Maps" when
+    /// idle. The individual operations' own progress labels still drive their menu item text.</summary>
+    public string MapsButtonLabel =>
+        IsDownloadingMaps ? DownloadMapsProgressLabel ?? "Downloading…"
+        : IsLiveChecking ? LiveCheckProgressLabel ?? "Checking…"
+        : "Maps";
+
+    /// <summary>Label for the single "Check for missing maps" menu item, which runs live
+    /// (via <see cref="CheckMapAvailabilityAsync"/>) when an API token is set - since the
+    /// live pass already runs the offline pass first, there's nothing an offline-only label
+    /// would add once a token exists.</summary>
+    public string CheckMapsMenuLabel =>
+        IsLiveChecking ? LiveCheckProgressLabel ?? "Checking…"
+        : CanLiveCheck ? "Check for missing maps (live)"
+        : "Check for missing maps";
+
+    partial void OnIsLiveCheckingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(MapsButtonLabel));
+        OnPropertyChanged(nameof(CheckMapsMenuLabel));
+    }
+
+    partial void OnLiveCheckProgressLabelChanged(string? value)
+    {
+        OnPropertyChanged(nameof(MapsButtonLabel));
+        OnPropertyChanged(nameof(CheckMapsMenuLabel));
+    }
+
+    partial void OnIsDownloadingMapsChanged(bool value) => OnPropertyChanged(nameof(MapsButtonLabel));
+    partial void OnDownloadMapsProgressLabelChanged(string? value) => OnPropertyChanged(nameof(MapsButtonLabel));
 
     [ObservableProperty]
     public partial string? LastKnownFileHint { get; set; }
@@ -345,18 +400,6 @@ public partial class MainViewModel : ViewModelBase
     // ------------------------------------------------------------------
 
     [RelayCommand]
-    private void CheckAllFiltered()
-    {
-        foreach (var p in FilteredPlugins) p.IsChecked = true;
-    }
-
-    [RelayCommand]
-    private void UncheckAll()
-    {
-        foreach (var p in _allPlugins) p.IsChecked = false;
-    }
-
-    [RelayCommand]
     private async Task RemoveCheckedAsync()
     {
         var toRemove = _allPlugins.Where(p => p.IsChecked).ToList();
@@ -376,15 +419,28 @@ public partial class MainViewModel : ViewModelBase
     // Map availability (offline check against RA Control's own local cache)
     // ------------------------------------------------------------------
 
+    /// <summary>Checks for missing maps: runs live against RA Control's own API if an API
+    /// token is set in Settings (since that pass runs the offline check first anyway - see
+    /// <see cref="RunLiveMapCheckAsync"/> - there's no reason to offer the offline-only
+    /// result as a separate option once live is available), otherwise falls back to the
+    /// offline-only cache check below.</summary>
+    [RelayCommand]
+    private async Task CheckMapAvailabilityAsync()
+    {
+        if (_allPlugins.Count == 0) return;
+
+        if (CanLiveCheck)
+            await RunLiveMapCheckAsync();
+        else
+            RunOfflineMapCheck();
+    }
+
     /// <summary>Cross-references every loaded plugin's uniqueId against RA Control's own
     /// local map cache (AvailableMaps.txt + Parameter Tables) — no network calls. Plugins
     /// with a map available but not yet downloaded are auto-selected via IsSelectedForMap,
     /// which is intentionally separate from IsChecked (removal) so the two can't collide.</summary>
-    [RelayCommand]
-    private void CheckMapAvailability()
+    private void RunOfflineMapCheck()
     {
-        if (_allPlugins.Count == 0) return;
-
         var selectedModels = _settingsStore.Load().SelectedControllerModels;
         var result = _mapAvailabilityService.Evaluate(_allPlugins, selectedModels);
         HasCheckedMaps = true;
@@ -409,11 +465,11 @@ public partial class MainViewModel : ViewModelBase
     /// offline check above couldn't confidently mark "Downloaded" (no local Parameter
     /// Table) - fixes cases where a stale/incomplete AvailableMaps.txt snapshot would
     /// otherwise misflag a plugin as having no map at all (and auto-check it for removal).
-    /// Requires a user-supplied API token in Settings; this app never ships one.</summary>
-    [RelayCommand]
-    private async Task CheckMapAvailabilityLiveAsync()
+    /// Requires a user-supplied API token in Settings; this app never ships one. Called only
+    /// from <see cref="CheckMapAvailabilityAsync"/> once it's confirmed a token is set.</summary>
+    private async Task RunLiveMapCheckAsync()
     {
-        if (IsLiveChecking || _allPlugins.Count == 0 || string.IsNullOrWhiteSpace(ApiToken)) return;
+        if (IsLiveChecking || string.IsNullOrWhiteSpace(ApiToken)) return;
 
         var selectedModels = _settingsStore.Load().SelectedControllerModels;
         if (selectedModels.Count == 0)
@@ -699,5 +755,6 @@ public partial class MainViewModel : ViewModelBase
         ShownCount = shown ?? FilteredPlugins.Count;
         CheckedCount = _allPlugins.Count(p => p.IsChecked);
         SelectedForMapCount = _allPlugins.Count(p => p.IsSelectedForMap);
+        OnPropertyChanged(nameof(HeaderCheckState));
     }
 }
