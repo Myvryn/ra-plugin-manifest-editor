@@ -4,9 +4,15 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon Condition="Exists('Assets\app.ico')">Assets\app.ico</ApplicationIcon>
+    <!-- Unconditional: the icon is committed, so a missing file should be a
+         build error rather than the silent no-op the old Exists() check gave. -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <Product>RA Plugin Manifest Editor</Product>
     <AssemblyTitle>RA Plugin Manifest Editor</AssemblyTitle>
+    <Company>Six Walls</Company>
+    <Copyright>Copyright © Six Walls</Copyright>
+    <Version>1.1.0</Version>
+    <FileVersion>1.1.0.0</FileVersion>
     <RootNamespace>RAPluginManifestEditor</RootNamespace>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>

@@ -224,14 +224,30 @@
             <Border Grid.Row="4" Background="{StaticResource BrushPanel}"
                     BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,1,0,0"
                     Padding="20,12">
-                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <Button Content="Save changes" Classes="primary" IsEnabled="{Binding IsFileLoaded}"
-                            Command="{Binding SaveCommand}" />
-                    <Button Content="Save edited copy as…" IsEnabled="{Binding IsFileLoaded}"
-                            Command="{Binding SaveAsCopyCommand}" />
-                    <TextBlock Text="{Binding StatusLog}" Foreground="{StaticResource BrushTextMuted}"
-                               FontSize="11.5" TextWrapping="Wrap" MaxWidth="600" VerticalAlignment="Center" />
-                </StackPanel>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Button Content="Save changes" Classes="primary" IsEnabled="{Binding IsFileLoaded}"
+                                Command="{Binding SaveCommand}" />
+                        <Button Content="Save edited copy as…" IsEnabled="{Binding IsFileLoaded}"
+                                Command="{Binding SaveAsCopyCommand}" />
+                        <TextBlock Text="{Binding StatusLog}" Foreground="{StaticResource BrushTextMuted}"
+                                   FontSize="11.5" TextWrapping="Wrap" MaxWidth="520" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Six Walls maker's mark -->
+                    <Button Grid.Column="2" Classes="ghost" Padding="6,4" Click="OnSixWallsClick"
+                            ToolTip.Tip="A Six Walls application — sixwalls.net">
+                        <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                            <Image Source="avares://RAPluginManifestEditor/Assets/six_walls_mark.png"
+                                   Height="24" VerticalAlignment="Center" />
+                            <TextBlock VerticalAlignment="Center" FontSize="13" FontWeight="Bold"
+                                       LetterSpacing="2">
+                                <Run Text="SIX " Foreground="{StaticResource BrushTextPrimary}" />
+                                <Run Text="WALLS" Foreground="#E08A3C" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Border>
         </Grid>
 

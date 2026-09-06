@@ -1,5 +1,6 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using RAPluginManifestEditor.ViewModels;
 
 namespace RAPluginManifestEditor.Views;
@@ -10,6 +11,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Opened += OnOpened;
+    }
+
+    private void OnSixWallsClick(object? sender, RoutedEventArgs e)
+    {
+        // The maker's mark in the footer opens the Six Walls site.
+        _ = TopLevel.GetTopLevel(this)?.Launcher.LaunchUriAsync(new Uri("https://www.sixwalls.net"));
     }
 
     private async void OnOpened(object? sender, EventArgs? e)
