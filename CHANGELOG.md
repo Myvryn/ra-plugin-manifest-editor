@@ -35,3 +35,8 @@ detail is in the git history.
 ## Unreleased
 
 - Six Walls branding: app icon, maker's mark, corrected assembly identity.
+- **Offline HTML manual** ships next to the executable
+  (`RA Plugin Manifest Editor - Manual.html`), matching the other Six Walls
+  products; also published at
+  `sixwalls.net/support/ra-plugin-manifest-editor-manual.html`. The in-app Help
+  panel stays the primary reference.

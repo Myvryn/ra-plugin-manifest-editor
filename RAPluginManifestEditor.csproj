@@ -26,6 +26,17 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
+  <!-- The offline HTML manual ships next to the executable, matching the other
+       Six Walls products. The in-app Help panel is the primary reference; this
+       is the copy a user can open in a browser, print, or read before
+       installing. Keep it in sync with sixwalls.net/support/. -->
+  <ItemGroup>
+    <Content Include="docs\RA-Plugin-Manifest-Editor-Help.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>RA Plugin Manifest Editor - Manual.html</Link>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.1" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />

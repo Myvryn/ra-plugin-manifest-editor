@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RA Plugin Manifest Editor &mdash; Operating Manual</title>
+<style>
+  :root{
+    --ground:#f4f6fa; --panel:#fff; --panel2:#eef1f6; --ink:#191f27;
+    --muted:#5c6675; --hair:#dde2ea; --accent:#b07d2a; --warn:#9a3b2f;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#0f1013; --panel:#17181c; --panel2:#1d1f24; --ink:#e7e6e2;
+      --muted:#9aa0a8; --hair:#2a2c33; --accent:#dcb96e; --warn:#e6827d;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+    font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    padding:40px 20px}
+  main{max-width:760px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 4px}
+  h2{font-size:20px;margin:36px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--hair)}
+  h3{font-size:16px;margin:22px 0 6px}
+  .sub{color:var(--muted);margin:0 0 8px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:4px;
+    font:14px/1.4 ui-monospace,Consolas,monospace;word-break:break-word}
+  .card{background:var(--panel);border:1px solid var(--hair);border-radius:10px;
+    padding:16px 18px;margin:14px 0}
+  .card.warn{border-left:3px solid var(--warn)}
+  table{border-collapse:collapse;width:100%;margin:12px 0}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--hair);vertical-align:top}
+  th{color:var(--muted);font-weight:600}
+  .k{color:var(--accent);font-weight:600;white-space:nowrap}
+  a{color:var(--accent)}
+  ul,ol{padding-left:22px}
+  li{margin:4px 0}
+  .note{font-size:14px;color:var(--muted)}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps>li{position:relative;padding-left:34px;margin:10px 0}
+  ol.steps>li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:1px;
+    width:24px;height:24px;display:grid;place-items:center;border:1px solid var(--accent);
+    border-radius:6px;color:var(--accent);font:600 13px/1 ui-monospace,Consolas,monospace}
+</style>
+</head>
+<body>
+<main>
+
+<h1>RA Plugin Manifest Editor</h1>
+<p class="sub">Curate RA Control&rsquo;s Insert Plugins list &mdash; Six Walls</p>
+
+<div class="card warn">
+  <strong>Unofficial, third-party tool.</strong> This project is not created by,
+  affiliated with, endorsed by, or sponsored by Rocksolid&nbsp;Audio.
+  &ldquo;RA&nbsp;Control&rdquo; and any related names or marks belong to their
+  respective owners and are used here only to describe compatibility. The app
+  works by editing a local configuration file (<code>HostMode.props</code>) and
+  is not supported by Rocksolid&nbsp;Audio &mdash; use at your own risk, and read
+  <a href="#backup">Does it back up your file?</a> before relying on it.
+</div>
+
+<p>RA&nbsp;Control keeps a list of every plug-in it has found on your system in a
+file called <code>HostMode.props</code>. That list is what populates the
+<strong>Insert&nbsp;Plugins</strong> activity in Host&nbsp;Mode. The file is
+plain XML (JUCE&rsquo;s <code>KnownPluginList</code> format), and duplicate,
+broken, or shell/placeholder entries pile up there with no supported way to
+clear them out short of editing the XML by hand.</p>
+
+<p>This app is a proper interface for that job: open the file, check the plug-ins
+you want gone, remove them, save. It remembers what you removed, so if
+RA&nbsp;Control&rsquo;s scanner re-adds one later it is flagged for you the next
+time you open the file.</p>
+
+<h2>Installing</h2>
+<p>The app is a single self-contained executable &mdash; no .NET runtime is
+needed on the target machine.</p>
+<table>
+  <tr><td class="k">Windows</td><td>Run <code>RA&nbsp;Plugin&nbsp;Manifest&nbsp;Editor.exe</code>.
+    The first launch of a freshly signed build may show a SmartScreen
+    &ldquo;not commonly downloaded&rdquo; note &mdash; <em>More&nbsp;info</em>
+    &rarr; <em>Run&nbsp;anyway</em>.</td></tr>
+  <tr><td class="k">macOS</td><td>Unzip and move the app to
+    <code>/Applications</code>. If Gatekeeper blocks the first launch,
+    right-click the app and choose <em>Open</em>.</td></tr>
+</table>
+<p>Nothing is installed system-wide. The app&rsquo;s own settings live in a
+separate folder from RA&nbsp;Control&rsquo;s files (see
+<a href="#where">Where things live</a>), so removing the app leaves RA&nbsp;Control
+untouched.</p>
+
+<h2>The workflow</h2>
+<ol class="steps">
+  <li><strong>Open the file.</strong> Click <span class="k">Open different
+    file&hellip;</span> (or <span class="k">Open HostMode.props&hellip;</span> if
+    nothing is loaded). The picker opens straight into RA&nbsp;Control&rsquo;s
+    own <code>Host&nbsp;Mode</code> folder &mdash; double-click
+    <code>HostMode.props</code>. The app reloads the last file you opened
+    automatically on the next launch.</li>
+  <li><strong>Browse.</strong> Filter by name, manufacturer, format, or category
+    with the search box, narrow by format with the dropdown, and click any
+    column header to sort.</li>
+  <li><strong>Check what you want removed.</strong> The checkbox in the table
+    header checks or unchecks every currently filtered row at once.</li>
+  <li><strong>Stage the removal.</strong> <span class="k">Remove checked
+    (N)</span> moves the checked plug-ins out of the in-memory list. Nothing is
+    written to disk yet.</li>
+  <li><strong>Save.</strong> <span class="k">Save changes</span> writes the file
+    back &mdash; after copying the current version to a timestamped backup first.
+    If plug-ins are still checked but were never removed, Save stops and asks,
+    so a batch of intended removals can&rsquo;t be lost by accident.</li>
+  <li><strong>Restart RA&nbsp;Control</strong> (or reopen Host&nbsp;Mode) to see
+    the trimmed list.</li>
+</ol>
+<p><span class="k">Reload from disk</span> re-reads the current file without
+reopening the picker &mdash; useful after RA&nbsp;Control&rsquo;s scanner has run
+again. <span class="k">Save edited copy as&hellip;</span> exports your changes to
+a new file instead of overwriting the original.</p>
+
+<h2>Removal history</h2>
+<p>Every plug-in you remove is remembered after the app closes. If a rescan
+brings a removed plug-in back into <code>HostMode.props</code>, the next time you
+open or reload the file it is pre-checked and tagged <span class="k">history</span>
+&mdash; so clearing it out again is one more <span class="k">Remove checked</span>
+plus <span class="k">Save changes</span>.</p>
+<p>Open <span class="k">Removal history</span> in the toolbar to see everything
+you have ever removed. Each entry has two actions:</p>
+<ul>
+  <li><span class="k">Restore</span> &mdash; puts that plug-in straight back into
+    the file you currently have open, with no need to reopen the original or
+    redo other removals.</li>
+  <li><span class="k">Forget</span> &mdash; stops it being auto-selected in
+    future without adding it back.</li>
+</ul>
+<p>Either way, click <span class="k">Save changes</span> afterward to write it to
+disk.</p>
+
+<h2>Checking for maps</h2>
+<p>The <span class="k">Maps</span> menu cross-checks every plug-in against
+RA&nbsp;Control&rsquo;s own local map cache &mdash; no network calls. Plug-ins
+with no map available anywhere are auto-checked for removal, so you can trim the
+list down to what RA&nbsp;Control can actually map.</p>
+
+<h2 id="backup">Does it back up your file?</h2>
+<div class="card">
+  <p><strong>Yes &mdash; automatically, on every save.</strong> Each time you
+  click <span class="k">Save changes</span>, the app copies whatever is currently
+  on disk to a timestamped backup &mdash;
+  <code>HostMode.props.bak-YYYYMMDD-HHmmss</code> &mdash; in the same folder,
+  <em>before</em> it writes anything. No setup, no toggle.</p>
+  <p style="margin-bottom:0">If an edit goes wrong, the previous version is
+  sitting right next to the file; rename it back to <code>HostMode.props</code>.
+  These backups accumulate (one per save) and are not auto-deleted, so it is
+  worth clearing old ones out of the <code>Host&nbsp;Mode</code> folder
+  occasionally if you save often.</p>
+</div>
+
+<h2 id="where">Where things live</h2>
+<table>
+  <tr><th>What</th><th>Where</th></tr>
+  <tr><td>The manifest</td><td>
+    <code>%APPDATA%\Rocksolid&nbsp;Audio\RA&nbsp;Control\Host&nbsp;Mode\HostMode.props</code> (Windows)<br>
+    <code>~/Library/Application&nbsp;Support/Rocksolid&nbsp;Audio/RA&nbsp;Control/Host&nbsp;Mode/HostMode.props</code> (macOS)<br>
+    <span class="note">RA&nbsp;Control&rsquo;s folder &mdash; untouched except when you hit Save.</span></td></tr>
+  <tr><td>Manifest backups</td><td>Same folder, as <code>HostMode.props.bak-&lt;timestamp&gt;</code></td></tr>
+  <tr><td>This app&rsquo;s settings</td><td>
+    <code>%APPDATA%\RAPluginManifestEditor\settings.json</code> (Windows)<br>
+    <code>~/Library/Application&nbsp;Support/RAPluginManifestEditor/</code> (macOS)</td></tr>
+  <tr><td>Removal history</td><td><code>&hellip;\RAPluginManifestEditor\removal-history.json</code></td></tr>
+</table>
+<p class="note">Deleting the app&rsquo;s own settings/history resets this tool
+without touching RA&nbsp;Control.</p>
+
+<h2>Troubleshooting</h2>
+<table>
+  <tr><td class="k">The picker doesn&rsquo;t open into the right folder</td>
+    <td>RA&nbsp;Control may not be installed, or has never run Host&nbsp;Mode. Browse to
+    the path in <a href="#where">Where things live</a> by hand.</td></tr>
+  <tr><td class="k">Removed plug-ins came back</td>
+    <td>RA&nbsp;Control&rsquo;s scanner re-added them. Reload the file &mdash; they will be
+    pre-checked and tagged <span class="k">history</span>; remove and save again.</td></tr>
+  <tr><td class="k">Save did nothing</td>
+    <td>If you checked plug-ins but never clicked <span class="k">Remove checked</span>,
+    Save stops and asks first. Confirm the prompt, or remove them, then save.</td></tr>
+  <tr><td class="k">RA&nbsp;Control still shows the old list</td>
+    <td>Restart RA&nbsp;Control, or leave and re-enter Host&nbsp;Mode, so it re-reads
+    <code>HostMode.props</code>.</td></tr>
+  <tr><td class="k">SmartScreen / Gatekeeper warning</td>
+    <td>The build is code-signed, but a fresh certificate takes time to earn
+    reputation. Windows: <em>More&nbsp;info</em> &rarr; <em>Run&nbsp;anyway</em>.
+    macOS: right-click &rarr; <em>Open</em>.</td></tr>
+</table>
+
+<h2>About</h2>
+<p class="note">RA Plugin Manifest Editor &mdash; Six Walls. Built with Avalonia
+and .NET. Unofficial companion tool for RA&nbsp;Control; not affiliated with
+Rocksolid&nbsp;Audio. Support:
+<a href="https://sixwalls.net/support.html">sixwalls.net/support</a>.</p>
+
+</main>
+</body>
+</html>
