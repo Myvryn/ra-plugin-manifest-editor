@@ -3,3 +3,7 @@ obj/
 publish/
 *.user
 .vs/
+
+# Installer build output (installer/build-installer.ps1)
+installer/dist/
+installer/vendor/
