@@ -73,21 +73,23 @@ RA&nbsp;Control&rsquo;s scanner re-adds one later it is flagged for you the next
 time you open the file.</p>
 
 <h2>Installing</h2>
-<p>The app is a single self-contained executable &mdash; no .NET runtime is
-needed on the target machine.</p>
 <table>
-  <tr><td class="k">Windows</td><td>Run <code>RA&nbsp;Plugin&nbsp;Manifest&nbsp;Editor.exe</code>.
-    The first launch of a freshly signed build may show a SmartScreen
-    &ldquo;not commonly downloaded&rdquo; note &mdash; <em>More&nbsp;info</em>
-    &rarr; <em>Run&nbsp;anyway</em>.</td></tr>
-  <tr><td class="k">macOS</td><td>Unzip and move the app to
-    <code>/Applications</code>. If Gatekeeper blocks the first launch,
-    right-click the app and choose <em>Open</em>.</td></tr>
+  <tr><td class="k">Windows</td><td>Run the installer &mdash; Start Menu
+    shortcut, optional desktop shortcut, uninstall via
+    <em>Settings&nbsp;&rarr; Apps</em>. If your machine doesn&rsquo;t already
+    have the .NET&nbsp;10 Runtime, the installer fetches it (Web flavour) or
+    bundles it (Offline flavour) automatically &mdash; nothing to install by
+    hand. A freshly signed build may show a SmartScreen &ldquo;not commonly
+    downloaded&rdquo; note &mdash; <em>More&nbsp;info</em> &rarr;
+    <em>Run&nbsp;anyway</em>.</td></tr>
+  <tr><td class="k">macOS</td><td>Still a self-contained, portable app &mdash;
+    no runtime needed. Unzip and move it to <code>/Applications</code>. If
+    Gatekeeper blocks the first launch, right-click the app and choose
+    <em>Open</em>.</td></tr>
 </table>
-<p>Nothing is installed system-wide. The app&rsquo;s own settings live in a
-separate folder from RA&nbsp;Control&rsquo;s files (see
-<a href="#where">Where things live</a>), so removing the app leaves RA&nbsp;Control
-untouched.</p>
+<p>The app&rsquo;s own settings live in a separate folder from
+RA&nbsp;Control&rsquo;s files (see <a href="#where">Where things live</a>), so
+uninstalling leaves RA&nbsp;Control untouched.</p>
 
 <h2>The workflow</h2>
 <ol class="steps">
