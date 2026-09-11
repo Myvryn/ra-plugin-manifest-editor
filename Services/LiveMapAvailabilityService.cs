@@ -73,7 +73,7 @@ public class LiveMapAvailabilityService
     {
         var toCheck = plugins.Where(p => p.MapAvailability != MapAvailability.Downloaded).ToList();
         var models = new List<string>(selectedControllerModels);
-        var semaphore = new SemaphoreSlim(MaxConcurrency);
+        using var semaphore = new SemaphoreSlim(MaxConcurrency);
         var tasks = new List<Task>();
         int done = 0, confirmed = 0, failed = 0;
         var syncRoot = new object();
@@ -193,7 +193,7 @@ public class LiveMapAvailabilityService
             .Where(x => x.UniqueId is not null)
             .ToList();
         var models = new List<string>(selectedControllerModels);
-        var semaphore = new SemaphoreSlim(MaxConcurrency);
+        using var semaphore = new SemaphoreSlim(MaxConcurrency);
         var tasks = new List<Task>();
         int done = 0, failed = 0;
         var nowAvailable = new List<HistoryEntry>();

@@ -62,7 +62,7 @@ public class HostMapDownloadService
         var models = new List<string>(selectedControllerModels);
         var hostMapsDir = AppPaths.GetOrCreateHostMapsDir();
 
-        var semaphore = new SemaphoreSlim(MaxConcurrency);
+        using var semaphore = new SemaphoreSlim(MaxConcurrency);
         var tasks = new List<Task>();
         int done = 0, downloaded = 0, failed = 0;
         var syncRoot = new object();
