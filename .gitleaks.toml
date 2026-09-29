@@ -1,0 +1,13 @@
+title = "RA Plugin Manifest Editor gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Non-secret identifiers"
+regexes = [
+  # App Store Connect API issuer ID used by notarytool in .github/scripts/mac-sign.sh.
+  # It is an identifier, not a credential: useless without the .p8 private key,
+  # which lives only on the Mac mini and is never committed.
+  '''3c357d1f-bb38-4590-acaf-99f1e19f1fc4''',
+]
