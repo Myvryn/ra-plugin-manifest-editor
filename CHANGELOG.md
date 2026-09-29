@@ -8,6 +8,13 @@ detail is in the git history.
 
 ---
 
+## 1.2.1 — 2026-09-29 (macOS only)
+
+- Fixed: the macOS app could not start. It was signed for the hardened
+  runtime without the entitlements a .NET app needs, so macOS killed it at
+  launch. Now signed with them, and the build checks that the signed app
+  actually stays running before it is packaged. Windows is unchanged.
+
 ## 1.2.0 — 2026-09-11
 
 - **Real Windows installer**, replacing the raw self-contained `.exe` (104 MB,

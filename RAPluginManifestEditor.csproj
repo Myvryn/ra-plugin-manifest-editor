@@ -11,7 +11,7 @@
     <AssemblyTitle>RA Plugin Manifest Editor</AssemblyTitle>
     <Company>Six Walls</Company>
     <Copyright>Copyright © Six Walls</Copyright>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <FileVersion>1.2.0.0</FileVersion>
     <RootNamespace>RAPluginManifestEditor</RootNamespace>
     <InvariantGlobalization>true</InvariantGlobalization>
