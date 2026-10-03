@@ -7,3 +7,6 @@ publish/
 # Installer build output (installer/build-installer.ps1)
 installer/dist/
 installer/vendor/
+
+# Mac-mini build output (installer/build-mac.ps1)
+dist-mac/
